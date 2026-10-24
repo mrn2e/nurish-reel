@@ -37,7 +37,7 @@ const save = () => {
     localStorage.setItem(KEY, JSON.stringify(copy));
   } catch (e) {}
 };
-const ui = { nutTab: 'daily', profTab: 'posts', filter: '', chip: 'all', reelServ: {}, up: null };
+const ui = { nutTab: 'daily', profTab: 'posts', filter: '', chip: 'all', reelServ: {}, captionMinimized: {}, up: null };
 
 const allRecipes = () => [...S.uploaded, ...SEED_RECIPES];
 const byId = id => allRecipes().find(r => r.id === id);
@@ -267,6 +267,7 @@ function recipePane(r, s) {
 }
 function reelHTML(r) {
   const liked = S.liked.includes(r.id), saved = S.collections.some(c => c.ids.includes(r.id)), s = ui.reelServ[r.id] || r.servings || 2, p = per(r);
+  const captionMinimized = !!ui.captionMinimized[r.id];
   const cmts = (S.comments[r.id] || []).length;
   const following = S.following.includes(r.creator);
   const initial = (r.creator || 'you')[0].toUpperCase();
@@ -278,7 +279,8 @@ function reelHTML(r) {
   <div class="pane video">${r.videoUrl ? `<video src="${r.videoUrl}" loop muted playsinline data-a="vid"></video>` : poster(r)}<div class="shade"></div>
     <button class="edge l" data-a="pane" data-p="0">Nutrition</button><button class="edge r" data-a="pane" data-p="2">Recipe</button>
     <div class="r-avatar">${initial}${following ? '' : `<button class="plus" data-a="follow" data-id="${r.id}" aria-label="Follow">+</button>`}</div>
-    <div class="caption">
+    <div class="caption${captionMinimized ? ' minimized' : ''}">
+      <div class="caption-tools"><button class="caption-toggle" data-a="toggleCaption" data-id="${r.id}" aria-label="${captionMinimized ? 'Show' : 'Minimize'} caption" aria-pressed="${captionMinimized}">${captionMinimized ? 'Show caption' : 'Minimize'}</button></div>
       <span class="match-pill"><svg viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg>${matchPct(r)}% pantry match</span>
       <div class="who">@${esc(r.creator || 'you')}${following ? '' : `<button class="follow" data-a="follow" data-id="${r.id}">Follow</button>`}</div>
       <h2>${esc(r.title)}</h2>
@@ -395,6 +397,7 @@ function uploadHTML() {
   const idx = STAGES.findIndex(s => s[0] === u.stage);
   return `<div class="up"><label class="drop" id="drop"><b>Drop a cooking video</b><span>${u.video ? esc(u.video.name) : 'or tap to choose a file'}</span><input type="file" id="vid" accept="video/*"></label>
   <div class="file-line"><span>Captions (optional): <b>${u.captions ? esc(u.captions.name) : 'none'}</b></span><label class="small-link" style="cursor:pointer">Add .srt or .vtt<input type="file" id="cap" accept=".srt,.vtt" hidden></label></div>
+  <label class="post-caption">Post caption (optional)<textarea id="post-caption" placeholder="Add a note about this recipe..." aria-label="Post caption" ${running ? 'disabled' : ''}>${esc(u.caption || '')}</textarea><span>Shown with your video on Discover. Leave blank to use the recipe summary.</span></label>
   <button class="big-btn alt" data-a="process" ${u.video && !running ? '' : 'disabled style="opacity:.4"'}>${running ? 'Working' : 'Turn it into a recipe'}</button>
   ${u.state ? `<ul class="stages">${STAGES.map(([k, l], i) => `<li class="${u.state === 'done' || i < idx ? 'done' : i === idx ? 'run' : ''}"><i></i>${l}</li>`).join('')}</ul>` : ''}
   ${u.error ? `<div class="note err">${esc(u.error)}</div>` : ''}${u.demo ? `<div class="note">Backend not reachable at ${esc(Api.base())}, so this ran in demo mode with a sample recipe. Start the API with uvicorn, or <a class="small-link" href="#" data-a="apiUrl">change the URL</a>.</div>` : ''}
@@ -406,16 +409,17 @@ function resultHTML(r) {
   <div class="row"><button class="big-btn" data-a="postIt">Post to Discover</button><button class="big-btn alt" data-a="cartResult">Shop it</button></div></div>`;
 }
 function bindUpload(el) {
-  const v = $('#vid', el), c = $('#cap', el), d = $('#drop', el);
-  v && v.addEventListener('change', () => { ui.up = { video: v.files[0], captions: (ui.up || {}).captions }; renderProfile(); });
+  const v = $('#vid', el), c = $('#cap', el), d = $('#drop', el), caption = $('#post-caption', el);
+  v && v.addEventListener('change', () => { ui.up = { ...(ui.up || {}), video: v.files[0] }; renderProfile(); });
   c && c.addEventListener('change', () => { ui.up = { ...(ui.up || {}), captions: c.files[0] }; renderProfile(); });
+  caption && caption.addEventListener('input', () => { ui.up = { ...(ui.up || {}), caption: caption.value }; });
   if (d) { ['dragover', 'dragenter'].forEach(e => d.addEventListener(e, ev => { ev.preventDefault(); d.classList.add('over'); })); ['dragleave', 'drop'].forEach(e => d.addEventListener(e, () => d.classList.remove('over')));
-    d.addEventListener('drop', ev => { ev.preventDefault(); const f = ev.dataTransfer.files[0]; if (f) { ui.up = { video: f, captions: (ui.up || {}).captions }; renderProfile(); } }); }
+    d.addEventListener('drop', ev => { ev.preventDefault(); const f = ev.dataTransfer.files[0]; if (f) { ui.up = { ...(ui.up || {}), video: f }; renderProfile(); } }); }
 }
-function toRecipe(res, file) {
+function toRecipe(res, file, caption) {
   const r = res.recipe, id = 'up-' + Date.now().toString(36), pals = SEED_RECIPES.map(x => x.palette);
   return {
-    id, title: r.title, creator: 'mayamakes', summary: r.summary, caption: r.summary || '', servings: r.servings || 2, shelfDays: 3, likes: 0,
+    id, title: r.title, creator: 'mayamakes', summary: r.summary, caption: (caption || '').trim() || r.summary || '', servings: r.servings || 2, shelfDays: 3, likes: 0,
     tags: r.tags || [], palette: pals[hash(id) % pals.length], videoUrl: file ? URL.createObjectURL(file) : undefined,
     ingredients: (r.ingredients || []).map(i => ({ name: i.name, quantity: i.quantity, unit: i.unit || '', note: i.note })),
     steps: r.steps || [], nutrition_total: r.nutrition_total || { calories: 0, protein_g: 0, fat_g: 0, carbs_g: 0, fiber_g: 0, sugar_g: 0, sodium_mg: 0 }
@@ -433,7 +437,7 @@ async function process() {
       if (s.status === 'completed') break;
       renderProfile();
     }
-    u.result = toRecipe(await Api.result(job_id), u.video); u.state = 'done';
+    u.result = toRecipe(await Api.result(job_id), u.video, u.caption); u.state = 'done';
   } catch (e) {
     if (e.server) { u.state = null; u.error = e.message; }
     else {
@@ -443,7 +447,7 @@ async function process() {
       u.result = toRecipe({ recipe: { title: name ? name[0].toUpperCase() + name.slice(1) : 'Untitled recipe', summary: 'Processed from your upload.', servings: 2, tags: ['new'],
         ingredients: [{ name: 'olive oil', quantity: 2, unit: 'tbsp' }, { name: 'garlic cloves', quantity: 3, unit: '' }, { name: 'tomatoes', quantity: 4, unit: '' }, { name: 'pasta', quantity: 200, unit: 'g' }],
         steps: [{ number: 1, instruction: 'Sample step from the stub pipeline.' }, { number: 2, instruction: 'Serve warm.' }],
-        nutrition_total: { calories: 820, protein_g: 24, fat_g: 28, carbs_g: 110, fiber_g: 8, sugar_g: 12, sodium_mg: 900 } } }, u.video);
+        nutrition_total: { calories: 820, protein_g: 24, fat_g: 28, carbs_g: 110, fiber_g: 8, sugar_g: 12, sodium_mg: 900 } } }, u.video, u.caption);
       u.state = 'done';
     }
   }
@@ -474,6 +478,15 @@ const A = {
   },
   chip(el) { ui.chip = el.dataset.v; $$('#chips button').forEach(b => b.setAttribute('aria-pressed', b === el)); renderFeed(); },
   pane(el) { const p = el.closest('.pager'); p.scrollTo({ left: +el.dataset.p * p.clientWidth, behavior: 'smooth' }); },
+  toggleCaption(el) {
+    const id = el.dataset.id, minimized = !ui.captionMinimized[id];
+    ui.captionMinimized[id] = minimized;
+    const caption = el.closest('.video').querySelector('.caption');
+    caption.classList.toggle('minimized', minimized);
+    el.textContent = `${minimized ? 'Show' : 'Minimize'} caption`;
+    el.setAttribute('aria-label', `${minimized ? 'Show' : 'Minimize'} caption`);
+    el.setAttribute('aria-pressed', minimized);
+  },
   like(el) {
     const id = el.dataset.id, i = S.liked.indexOf(id); i < 0 ? S.liked.push(id) : S.liked.splice(i, 1); save();
     const r = byId(id), on = i < 0;
@@ -533,8 +546,8 @@ const A = {
   process,
   apiUrl(el, e) { e.preventDefault(); openSheet(`<h3>Backend URL</h3><input type="text" id="au" value="${esc(Api.base())}" aria-label="API base URL"><button class="big-btn" data-a="saveApi" style="margin:12px 0 0">Save</button>`); },
   saveApi() { localStorage.setItem('nurish.api', $('#au').value.trim()); closeSheet(); renderProfile(); },
-  postIt() { const r = ui.up.result; S.uploaded.unshift(r); save(); reelsBuilt && renderFeed(); ui.up = null; ui.profTab = 'posts'; renderProfile(); toast('Posted to Discover'); },
-  cartResult() { const r = ui.up.result; S.uploaded.unshift(r); S.cart.push({ id: r.id, s: r.servings }); save(); reelsBuilt && renderFeed(); ui.up = null; ui.profTab = 'posts'; renderProfile(); toast('Posted and added to Pantry list'); }
+  postIt() { const r = ui.up.result; r.caption = (ui.up.caption || '').trim() || r.summary || ''; S.uploaded.unshift(r); save(); reelsBuilt && renderFeed(); ui.up = null; ui.profTab = 'posts'; renderProfile(); toast('Posted to Discover'); },
+  cartResult() { const r = ui.up.result; r.caption = (ui.up.caption || '').trim() || r.summary || ''; S.uploaded.unshift(r); S.cart.push({ id: r.id, s: r.servings }); save(); reelsBuilt && renderFeed(); ui.up = null; ui.profTab = 'posts'; renderProfile(); toast('Posted and added to Pantry list'); }
 };
 document.addEventListener('click', e => {
   const el = e.target.closest('[data-a]'); if (!el || el.tagName === 'INPUT') return;
