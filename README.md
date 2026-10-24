@@ -20,11 +20,11 @@ serves the result to a frontend.
      ▲  poll job status         │                      │ 1. media extraction   │
      │                          ▼                      │ 2. transcription      │
      └───────── result ─ DB + object storage ◄─────────│ 3. OCR                │
-                                                        │ 4. captions           │
-                                                        │ 5. LLM structuring    │
-                                                        │ 6. nutrition (USDA)   │
-                                                        │ 7. shopping list      │
-                                                        └───────────────────────┘
+                                                       │ 4. captions           │
+                                                       │ 5. LLM structuring    │
+                                                       │ 6. nutrition (USDA)   │
+                                                       │ 7. shopping list      │
+                                                       └───────────────────────┘
 ```
 
 Processing is **asynchronous**: upload returns a `job_id` immediately and the
