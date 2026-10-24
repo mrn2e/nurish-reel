@@ -271,8 +271,8 @@ function reelHTML(r) {
   const captionText = String(r.caption || r.summary || '');
   const captionChars = Array.from(captionText);
   const captionExpanded = !!ui.captionExpanded[r.id];
-  const captionHTML = captionChars.length > 10
-    ? `<span class="caption-preview"${captionExpanded ? ' hidden' : ''}>${esc(captionChars.slice(0, 10).join(''))}…</span><span class="caption-full"${captionExpanded ? '' : ' hidden'}>${esc(captionText)}</span> <button class="caption-more" data-a="toggleCaptionOverflow" data-id="${r.id}" aria-expanded="${captionExpanded}">${captionExpanded ? 'Less' : 'More'}</button>`
+  const captionHTML = captionChars.length > 25
+    ? `<span class="caption-preview"${captionExpanded ? ' hidden' : ''}>${esc(captionChars.slice(0, 25).join(''))}…</span><span class="caption-full"${captionExpanded ? '' : ' hidden'}>${esc(captionText)}</span> <button class="caption-more" data-a="toggleCaptionOverflow" data-id="${r.id}" aria-expanded="${captionExpanded}">${captionExpanded ? 'Less' : 'More'}</button>`
     : esc(captionText);
   const cmts = (S.comments[r.id] || []).length;
   const following = S.following.includes(r.creator);
