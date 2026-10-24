@@ -34,7 +34,7 @@ nav (Pantry · Nutrition · Discover · Cookbooks · Profile) with a coral activ
 | Nutrition | Daily / Weekly segmented toggle. Daily shows a dark-green energy hero card (calorie ring + kcal left), Protein/Carbs/Fat macro cards, and a "Today's meals" list with + Add meal. Weekly shows the 7-day bar chart against your goal. Tap the ring to change the goal. |
 | Discover | Vertical reel feed. Swipe left/right inside a reel: Nutrition pie, Video, Recipe. Each reel has a pantry-match pill, creator handle + Follow, meta chips (time / protein / price), a coral "Make this recipe" button, and a rail with like, comments, save to collection, and share. |
 | Cookbooks | "My Cookbooks" with a featured collection banner and a 2-col collection grid (+ Create). Opening one plays that collection as a feed. |
-| Profile | "Hey, Maya" header, avatar + stats (Saved / Cooked / Videos), a "Your preferences" list, and sub-tabs for posts, upload (calls `POST /api/videos`, polls job status, fetches the result), reposts, and preferences. |
+| Profile | "Hey, Maya" header, avatar + stats (Saved / Cooked / Videos), and sub-tabs for posts, upload (calls `POST /api/videos`, polls job status, fetches the result), reposts, and preferences. Preferences include expandable multi-select lists for diets and the FDA's nine major food allergens, plus editable budget, nutrition, and equipment settings. |
 
 ## Files
 

@@ -20,7 +20,7 @@ const fresh = () => ({
   collections: SEED_COLLECTIONS.map(c => ({ ...c, ids: [...c.ids] })),
   comments: JSON.parse(JSON.stringify(SEED_COMMENTS)),
   goal: 2000, log: {}, history: {}, bio: '', follows: 128, followers: 342, reposts: ['bulgogi'],
-  prefs: { dietary: 'No restrictions', budget: '$60 / week', nutrition: '2,000 kcal goal', equipment: 'Stovetop, oven, blender' }
+  prefs: { diets: [], allergies: [], budget: '$60 / week', nutrition: '2,000 kcal goal', equipment: 'Stovetop, oven, blender' }
 });
 let S = fresh();
 try { const raw = localStorage.getItem(KEY); if (raw) S = { ...fresh(), ...JSON.parse(raw) }; } catch (e) {}
@@ -332,7 +332,22 @@ function openViewer(title, ids, startId) {
 }
 
 /* ---------- profile ---------- */
-const PREFS = [['dietary', 'Dietary preferences'], ['budget', 'Grocery budget'], ['nutrition', 'Nutrition goals'], ['equipment', 'Kitchen equipment']];
+const PREFS = [['budget', 'Grocery budget'], ['nutrition', 'Nutrition goals'], ['equipment', 'Kitchen equipment']];
+const DIET_OPTIONS = ['Vegan', 'Vegetarian', 'Pescatarian'];
+const ALLERGY_OPTIONS = ['Milk', 'Eggs', 'Fish', 'Crustacean shellfish', 'Tree nuts', 'Peanuts', 'Wheat', 'Soy', 'Sesame'];
+function preferenceSelections(key) {
+  const selections = S.prefs[key];
+  return Array.isArray(selections) ? selections : [];
+}
+function preferenceSummary(key, selections) {
+  return selections.length ? selections.join(', ') : `No ${key} selected`;
+}
+function preferenceDropdown(key, label, options) {
+  const selections = preferenceSelections(key);
+  return `<details class="pref-group"><summary><span>${label}</span><span class="pref-summary" data-pref-summary="${key}">${esc(preferenceSummary(key, selections))}</span></summary>
+    <div class="pref-options">${options.map(option => `<label><input type="checkbox" data-pref-group="${key}" value="${esc(option)}" ${selections.includes(option) ? 'checked' : ''}><span>${esc(option)}</span></label>`).join('')}</div>
+  </details>`;
+}
 function renderProfile() {
   const el = $('#screen-profile'), t = ui.profTab, mine = S.uploaded;
   const saved = new Set(S.collections.flatMap(c => c.ids)).size + S.liked.length;
@@ -340,7 +355,7 @@ function renderProfile() {
   let body = '';
   if (t === 'posts') body = mine.length ? `<div class="grid3">${mine.map(r => `<button data-a="openPost" data-id="${r.id}">${poster(r, true)}<small>${esc(r.title)}</small></button>`).join('')}</div>` : `<div class="empty"><b>No posts yet</b>Upload a cooking video with the plus tab and it becomes a recipe.</div>`;
   if (t === 'reposts') { const ids = [...new Set([...S.liked, ...S.reposts])]; body = `<div class="grid3">${ids.map(byId).filter(Boolean).map(r => `<button data-a="openPost" data-id="${r.id}" data-from="liked">${poster(r, true)}<small>${esc(r.title)}</small></button>`).join('')}</div>`; }
-  if (t === 'prefs') body = `<div class="pref-list">${PREFS.map(([k, lab]) => `<button class="pref" data-a="editPref" data-k="${k}">${esc(lab)}<span class="chev">${I.arrow}</span></button>`).join('')}</div>`;
+  if (t === 'prefs') body = `<div class="pref-list">${preferenceDropdown('diets', 'Diets', DIET_OPTIONS)}${preferenceDropdown('allergies', 'Allergies', ALLERGY_OPTIONS)}${PREFS.map(([k, lab]) => `<button class="pref" data-a="editPref" data-k="${k}">${esc(lab)}<span class="chev">${I.arrow}</span></button>`).join('')}</div>`;
   if (t === 'upload') body = uploadHTML();
   el.innerHTML = `
   <div class="p-head"><span class="eyebrow">Your space</span><h1 class="page-title">Hey, Maya</h1><p class="page-sub">Your kitchen, your rules.</p>
@@ -502,6 +517,17 @@ const A = {
 document.addEventListener('click', e => {
   const el = e.target.closest('[data-a]'); if (!el || el.tagName === 'INPUT') return;
   const fn = A[el.dataset.a]; if (fn) fn(el, e);
+});
+document.addEventListener('change', e => {
+  const el = e.target;
+  if (!(el instanceof HTMLInputElement) || !el.matches('input[data-pref-group]')) return;
+  const key = el.dataset.prefGroup, selections = preferenceSelections(key), index = selections.indexOf(el.value);
+  if (el.checked && index === -1) selections.push(el.value);
+  else if (!el.checked && index !== -1) selections.splice(index, 1);
+  S.prefs[key] = selections;
+  save();
+  const summary = $(`[data-pref-summary="${key}"]`);
+  if (summary) summary.textContent = preferenceSummary(key, selections);
 });
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') { if (!$('#sheet').hidden) closeSheet(); else if (!$('#viewer').hidden) A.closeViewer(); }

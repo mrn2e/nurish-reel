@@ -215,6 +215,15 @@ button:focus-visible,input:focus-visible,[tabindex]:focus-visible{outline:3px so
 .bio{padding:16px 22px 0;font-size:15px;line-height:1.45}
 .pref-list{padding:4px 22px 0}
 .pref-list .pref{display:flex;align-items:center;gap:12px;width:100%;padding:16px 2px;border-bottom:1px solid var(--line);text-align:left;font-size:16px;font-weight:600}
+.pref-group{border-bottom:1px solid var(--line)}
+.pref-group summary{display:flex;align-items:center;gap:12px;padding:16px 2px;cursor:pointer;list-style:none;font-size:16px;font-weight:600}
+.pref-group summary::-webkit-details-marker{display:none}
+.pref-group summary::after{content:'';width:8px;height:8px;margin-left:4px;border-right:1.5px solid var(--mute);border-bottom:1.5px solid var(--mute);transform:rotate(45deg) translateY(-2px);flex:none}
+.pref-group[open] summary::after{transform:rotate(225deg) translate(-2px,-1px)}
+.pref-summary{min-width:0;max-width:55%;margin-left:auto;overflow:hidden;color:var(--mute);font-size:13px;font-weight:500;text-align:right;text-overflow:ellipsis;white-space:nowrap}
+.pref-options{display:grid;gap:2px;padding:0 0 12px 2px}
+.pref-options label{display:flex;align-items:center;gap:10px;padding:8px 0;color:var(--ink);font-size:14px;cursor:pointer}
+.pref-options input{width:18px;height:18px;margin:0;accent-color:var(--forest)}
 .pref-list .pref .chev{margin-left:auto;display:inline-grid;place-items:center}
 .pref-list .pref .chev svg{width:18px;height:18px;fill:none;stroke:var(--mute);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .ptabs{display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:var(--paper);position:sticky;top:0;z-index:2;margin-top:22px}
