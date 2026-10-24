@@ -1,3 +1,8 @@
+https://nurish-reel-qqrcu79ib-rp-4135.vercel.app/
+
+
+
+
 # nurish-reel
 
 Turn cooking videos into **structured recipes**, **nutrition facts**, and a **shopping list**.
