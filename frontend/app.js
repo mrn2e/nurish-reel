@@ -37,7 +37,7 @@ const save = () => {
     localStorage.setItem(KEY, JSON.stringify(copy));
   } catch (e) {}
 };
-const ui = { nutTab: 'daily', profTab: 'posts', filter: '', chip: 'all', reelServ: {}, captionMinimized: {}, up: null };
+const ui = { nutTab: 'daily', profTab: 'posts', filter: '', chip: 'all', reelServ: {}, captionMinimized: {}, captionExpanded: {}, up: null };
 
 const allRecipes = () => [...S.uploaded, ...SEED_RECIPES];
 const byId = id => allRecipes().find(r => r.id === id);
@@ -268,6 +268,12 @@ function recipePane(r, s) {
 function reelHTML(r) {
   const liked = S.liked.includes(r.id), saved = S.collections.some(c => c.ids.includes(r.id)), s = ui.reelServ[r.id] || r.servings || 2, p = per(r);
   const captionMinimized = !!ui.captionMinimized[r.id];
+  const captionText = String(r.caption || r.summary || '');
+  const captionChars = Array.from(captionText);
+  const captionExpanded = !!ui.captionExpanded[r.id];
+  const captionHTML = captionChars.length > 10
+    ? `<span class="caption-preview"${captionExpanded ? ' hidden' : ''}>${esc(captionChars.slice(0, 10).join(''))}…</span><span class="caption-full"${captionExpanded ? '' : ' hidden'}>${esc(captionText)}</span> <button class="caption-more" data-a="toggleCaptionOverflow" data-id="${r.id}" aria-expanded="${captionExpanded}">${captionExpanded ? 'Less' : 'More'}</button>`
+    : esc(captionText);
   const cmts = (S.comments[r.id] || []).length;
   const following = S.following.includes(r.creator);
   const initial = (r.creator || 'you')[0].toUpperCase();
@@ -284,7 +290,7 @@ function reelHTML(r) {
       <span class="match-pill"><svg viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg>${matchPct(r)}% pantry match</span>
       <div class="who">@${esc(r.creator || 'you')}${following ? '' : `<button class="follow" data-a="follow" data-id="${r.id}">Follow</button>`}</div>
       <h2>${esc(r.title)}</h2>
-      <p>${esc(r.caption || r.summary || '')}</p>
+      <p>${captionHTML}</p>
       <div class="meta-chips">
         <span class="mc">${I.clock}${cookMin(r)} min</span>
         <span class="mc">${I.flame}${Math.round(p.protein_g)}g protein</span>
@@ -486,6 +492,15 @@ const A = {
     el.textContent = `${minimized ? 'Show' : 'Minimize'} caption`;
     el.setAttribute('aria-label', `${minimized ? 'Show' : 'Minimize'} caption`);
     el.setAttribute('aria-pressed', minimized);
+  },
+  toggleCaptionOverflow(el) {
+    const id = el.dataset.id, expanded = !ui.captionExpanded[id];
+    ui.captionExpanded[id] = expanded;
+    const caption = el.closest('.caption');
+    caption.querySelector('.caption-preview').hidden = expanded;
+    caption.querySelector('.caption-full').hidden = !expanded;
+    el.textContent = expanded ? 'Less' : 'More';
+    el.setAttribute('aria-expanded', expanded);
   },
   like(el) {
     const id = el.dataset.id, i = S.liked.indexOf(id); i < 0 ? S.liked.push(id) : S.liked.splice(i, 1); save();
