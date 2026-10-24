@@ -3,37 +3,51 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Nurish Reel</title>
+<title>nurish</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700;9..144,800;9..144,900&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-<div class="phone" id="phone" data-tab="reels">
+<div class="phone" id="phone" data-tab="discover">
+  <header class="appbar" id="appbar">
+    <div class="brand">
+      <span class="logo" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><path d="M12 21c5-2 8-6 8-11 0-1.5-.4-3-1.2-4.2C17 8 14 9 12 12 10 9 7 8 5.2 5.8 4.4 7 4 8.5 4 10c0 5 3 9 8 11z"/><path d="M12 21V9"/></svg>
+      </span>
+      <span class="wordmark">nurish</span>
+    </div>
+    <div class="appbar-actions" id="appbar-actions"></div>
+  </header>
   <main class="screens">
-    <section class="screen" id="screen-shop" hidden></section>
+    <section class="screen" id="screen-pantry"></section>
     <section class="screen" id="screen-nutrition" hidden></section>
-    <section class="screen" id="screen-reels"></section>
-    <section class="screen" id="screen-saved" hidden></section>
+    <section class="screen" id="screen-discover" hidden></section>
+    <section class="screen" id="screen-cookbooks" hidden></section>
     <section class="screen" id="screen-profile" hidden></section>
     <section class="screen overlay" id="viewer" hidden></section>
   </main>
   <nav class="nav" id="nav" aria-label="Main">
-    <button data-a="tab" data-v="shop" aria-label="Shopping">
-      <svg viewBox="0 0 32 32"><path d="M5 13h22l-2.5 11a3 3 0 0 1-2.9 2.3H10.400a3 3 0 0 1-2.900-2.300z"/><path d="M11 13l4-7M21 13l-4-7M12 17v5M16 17v5M20 17v5"/></svg>
+    <button data-a="tab" data-v="pantry" aria-label="Pantry">
+      <svg viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M5 9h14M10 6h4M10 13h4"/></svg>
+      <span>Pantry</span>
     </button>
     <button data-a="tab" data-v="nutrition" aria-label="Nutrition">
-      <svg viewBox="0 0 32 32"><path d="M16 27c-6 0-9-4.500-9-9.500C7 12 11 9 16 9s9 3 9 8.500c0 5-3 9.500-9 9.500z"/><path d="M16 9c0-3 1.500-5 4-5.500M12 16c1 2.500 3 3.500 5 3.500"/></svg>
+      <svg viewBox="0 0 24 24"><path d="M5 20V10M10 20V5M15 20v-8M20 20v-5"/></svg>
+      <span>Nutrition</span>
     </button>
-    <button data-a="tab" data-v="reels" aria-label="Reels">
-      <svg viewBox="0 0 32 32"><path d="M10 4v8a3 3 0 0 0 3 3v13M7 4v7M13 4v7M22 4c-3 2-4 6-4 10 0 2 1 3 3 3h1v11"/></svg>
+    <button data-a="tab" data-v="discover" aria-label="Discover">
+      <svg viewBox="0 0 24 24"><path d="M4 11l8-7 8 7"/><path d="M6 10v10h12V10"/></svg>
+      <span>Discover</span>
     </button>
-    <button data-a="tab" data-v="saved" aria-label="Saved recipes">
-      <svg viewBox="0 0 32 32"><path d="M7 5h14a3 3 0 0 1 3 3v19H10a3 3 0 0 1-3-3z"/><path d="M11 10h9M11 14h9M11 18h5"/><path d="M24 12h2v15"/></svg>
+    <button data-a="tab" data-v="cookbooks" aria-label="Cookbooks">
+      <svg viewBox="0 0 24 24"><path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h11"/></svg>
+      <span>Cookbooks</span>
     </button>
     <button data-a="tab" data-v="profile" aria-label="Profile">
-      <svg viewBox="0 0 32 32"><circle cx="16" cy="11" r="5"/><path d="M6 27c0-6 4.500-9 10-9s10 3 10 9z"/></svg>
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.5 3.5-7 8-7s8 2.5 8 7"/></svg>
+      <span>Profile</span>
     </button>
   </nav>
   <div class="sheet-wrap" id="sheet" hidden>

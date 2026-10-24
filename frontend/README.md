@@ -19,15 +19,22 @@ or use the "change the URL" link on the upload screen.
 If the API is unreachable the upload flow runs in demo mode with a sample recipe, so the
 whole UI works on its own.
 
-## Screens (from the sketches)
+## Design
+
+Follows the "nurish" Figma Make design: cream paper palette, dark green cards,
+coral accents, Fraunces serif headings and Figtree body. A persistent top app bar
+carries the leaf logo + wordmark and per-tab actions; a five-tab labelled bottom
+nav (Pantry · Nutrition · Discover · Cookbooks · Profile) with a coral active state.
+
+## Screens
 
 | Tab | What it does |
 |-----|--------------|
-| Shopping | "Shopping / Made" header tabs. Servings stepper per card, swipe left for Made it or Remove. Tap a card for the ingredient checklist (scales with servings). Made cards open a shelf life bar, servings left slider, and 3 face rating. |
-| Nutrition | Daily and Weekly. Goal, consumed and remaining rings, per meal logging with +. Tap the goal ring to change it. |
-| Reels | Vertical feed. Swipe left or right inside a reel: Nutrition pie, Video, Recipe. Rail has like, comments, save to collection, add to cart. Search and chips filter the feed. |
-| Saved | Collection grid with +. Opening one plays that collection as a feed. |
-| Profile | Followers, bio, posts grid, upload tab (calls `POST /api/videos`, polls job status, fetches the result), reposts, notes. |
+| Pantry | "My Pantry" with stat cards (items / use soon / low), a "Scan your fridge" CTA, and a "Meals you can make" grid of recipe cards with a % pantry-match badge, cook time and price. Tapping a card opens it as a full-screen recipe reel. |
+| Nutrition | Daily / Weekly segmented toggle. Daily shows a dark-green energy hero card (calorie ring + kcal left), Protein/Carbs/Fat macro cards, and a "Today's meals" list with + Add meal. Weekly shows the 7-day bar chart against your goal. Tap the ring to change the goal. |
+| Discover | Vertical reel feed. Swipe left/right inside a reel: Nutrition pie, Video, Recipe. Each reel has a pantry-match pill, creator handle + Follow, meta chips (time / protein / price), a coral "Make this recipe" button, and a rail with like, comments, save to collection, and share. |
+| Cookbooks | "My Cookbooks" with a featured collection banner and a 2-col collection grid (+ Create). Opening one plays that collection as a feed. |
+| Profile | "Hey, Maya" header, avatar + stats (Saved / Cooked / Videos), a "Your preferences" list, and sub-tabs for posts, upload (calls `POST /api/videos`, polls job status, fetches the result), reposts, and preferences. |
 
 ## Files
 
