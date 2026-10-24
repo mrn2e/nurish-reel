@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Nurish Reel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="phone" id="phone" data-tab="reels">
+  <main class="screens">
+    <section class="screen" id="screen-shop" hidden></section>
+    <section class="screen" id="screen-nutrition" hidden></section>
+    <section class="screen" id="screen-reels"></section>
+    <section class="screen" id="screen-saved" hidden></section>
+    <section class="screen" id="screen-profile" hidden></section>
+    <section class="screen overlay" id="viewer" hidden></section>
+  </main>
+  <nav class="nav" id="nav" aria-label="Main">
+    <button data-a="tab" data-v="shop" aria-label="Shopping">
+      <svg viewBox="0 0 32 32"><path d="M5 13h22l-2.5 11a3 3 0 0 1-2.9 2.3H10.400a3 3 0 0 1-2.900-2.300z"/><path d="M11 13l4-7M21 13l-4-7M12 17v5M16 17v5M20 17v5"/></svg>
+    </button>
+    <button data-a="tab" data-v="nutrition" aria-label="Nutrition">
+      <svg viewBox="0 0 32 32"><path d="M16 27c-6 0-9-4.500-9-9.500C7 12 11 9 16 9s9 3 9 8.500c0 5-3 9.500-9 9.500z"/><path d="M16 9c0-3 1.500-5 4-5.500M12 16c1 2.500 3 3.500 5 3.500"/></svg>
+    </button>
+    <button data-a="tab" data-v="reels" aria-label="Reels">
+      <svg viewBox="0 0 32 32"><path d="M10 4v8a3 3 0 0 0 3 3v13M7 4v7M13 4v7M22 4c-3 2-4 6-4 10 0 2 1 3 3 3h1v11"/></svg>
+    </button>
+    <button data-a="tab" data-v="saved" aria-label="Saved recipes">
+      <svg viewBox="0 0 32 32"><path d="M7 5h14a3 3 0 0 1 3 3v19H10a3 3 0 0 1-3-3z"/><path d="M11 10h9M11 14h9M11 18h5"/><path d="M24 12h2v15"/></svg>
+    </button>
+    <button data-a="tab" data-v="profile" aria-label="Profile">
+      <svg viewBox="0 0 32 32"><circle cx="16" cy="11" r="5"/><path d="M6 27c0-6 4.500-9 10-9s10 3 10 9z"/></svg>
+    </button>
+  </nav>
+  <div class="sheet-wrap" id="sheet" hidden>
+    <div class="scrim" data-a="closeSheet"></div>
+    <div class="sheet" role="dialog" aria-modal="true"><div class="grab"></div><div id="sheet-body"></div></div>
+  </div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+</div>
+<script src="data.js"></script>
+<script src="api.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
