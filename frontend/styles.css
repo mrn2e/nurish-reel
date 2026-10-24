@@ -173,6 +173,8 @@ button:focus-visible,input:focus-visible,[tabindex]:focus-visible{outline:3px so
 .ing{list-style:none}
 .ing li{padding:10px 0;border-bottom:1px solid #243a30;display:flex;gap:10px}
 .ing .qty{min-width:68px;font-weight:700;color:var(--gold)}
+.ing .ing-name{flex:1;min-width:0}
+.allergy-warning{align-self:flex-start;padding:3px 7px;border:1px solid #E05B49;border-radius:999px;color:#ffb4a9;font-size:11px;font-weight:700;line-height:1.25}
 .steps{list-style:none;counter-reset:s}
 .steps li{counter-increment:s;display:flex;gap:12px;padding:10px 0;line-height:1.45}
 .steps li::before{content:counter(s);flex:none;width:26px;height:26px;border-radius:50%;background:var(--coral);color:#fff;font-weight:700;display:grid;place-items:center;font-size:14px;margin-top:1px}

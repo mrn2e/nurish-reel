@@ -24,6 +24,7 @@ const fresh = () => ({
 });
 let S = fresh();
 try { const raw = localStorage.getItem(KEY); if (raw) S = { ...fresh(), ...JSON.parse(raw) }; } catch (e) {}
+S.prefs = { ...fresh().prefs, ...(S.prefs || {}) };
 if (!S.log[dayKey()]) {
   S.log[dayKey()] = { breakfast: [{ id: 'veggiesoup', s: 1 }], lunch: [{ id: 'katsudon', s: 1 }], dinner: [{ id: 'meatballs', s: 1 }], snacks: [] };
 }
@@ -61,6 +62,27 @@ const ingText = (i, f) => {
   const q = i.quantity != null ? fmtQty(i.quantity * f) : '';
   return { qty: [q, i.unit].filter(Boolean).join(' '), name: i.name + (i.note ? ', ' + i.note : '') };
 };
+const ALLERGEN_TERMS = {
+  Milk: ['milk', 'butter', 'ghee', 'cheese', 'cream', 'yogurt', 'yoghurt', 'whey', 'casein', 'lactose', 'buttermilk'],
+  Eggs: ['egg', 'eggs', 'albumin', 'mayonnaise'],
+  Fish: ['fish', 'salmon', 'tuna', 'cod', 'anchovy', 'anchovies', 'sardine', 'sardines', 'trout', 'tilapia', 'haddock', 'halibut', 'mackerel', 'fish sauce'],
+  'Crustacean shellfish': ['shrimp', 'prawn', 'crab', 'lobster', 'crayfish', 'crawfish', 'krill'],
+  'Tree nuts': ['almond', 'cashew', 'walnut', 'pecan', 'pistachio', 'hazelnut', 'macadamia', 'brazil nut', 'pine nut', 'chestnut'],
+  Peanuts: ['peanut', 'groundnut', 'arachis'],
+  Wheat: ['wheat', 'flour', 'bread', 'panko', 'breadcrumb', 'breadcrumbs', 'semolina', 'durum', 'spelt', 'farro', 'bulgur', 'couscous', 'seitan', 'triticale', 'einkorn'],
+  Soy: ['soy', 'soya', 'tofu', 'edamame', 'tempeh', 'miso'],
+  Sesame: ['sesame', 'tahini', 'benne', 'gingelly']
+};
+function matchingAllergies(ingredient) {
+  const name = ingredient.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  return preferenceSelections('allergies').filter(allergy => {
+    if (allergy === 'Milk' && /\b(coconut|oat|almond|soy|rice|cashew)\s+milk\b/.test(name)) return false;
+    return (ALLERGEN_TERMS[allergy] || []).some(term => {
+      const phrase = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '\\s+');
+      return new RegExp(`\\b${phrase}\\b`).test(name);
+    });
+  });
+}
 const hash = s => { let h = 7; for (const c of s) h = (h * 31 + c.charCodeAt(0)) >>> 0; return h; };
 const rng = seed => () => (seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296;
 
@@ -239,7 +261,7 @@ function pie(r) {
 function recipePane(r, s) {
   const f = s / (r.servings || 1);
   return `<h2>${esc(r.title)}</h2><div class="head-row"><span class="sub">Serves</span>${stepper('reel', r.id, s)}</div>
-  <h3>Ingredients</h3><ul class="ing">${r.ingredients.map(i => { const t = ingText(i, f); return `<li><span class="qty">${esc(t.qty) || '&nbsp;'}</span><span>${esc(t.name)}</span></li>`; }).join('')}</ul>
+  <h3>Ingredients</h3><ul class="ing">${r.ingredients.map(i => { const t = ingText(i, f), warnings = matchingAllergies(t.name); return `<li><span class="qty">${esc(t.qty) || '&nbsp;'}</span><span class="ing-name">${esc(t.name)}</span>${warnings.length ? `<span class="allergy-warning" role="note" aria-label="Potential allergen: ${esc(warnings.join(', '))}">Allergy: ${esc(warnings.join(', '))}</span>` : ''}</li>`; }).join('')}</ul>
   <h3>Directions</h3><ol class="steps">${r.steps.map(x => `<li>${esc(x.instruction)}</li>`).join('')}</ol>
   <button class="big-btn alt" data-a="cart" data-id="${r.id}">Add ingredients to Pantry list</button>`;
 }
@@ -334,7 +356,7 @@ function openViewer(title, ids, startId) {
 /* ---------- profile ---------- */
 const PREFS = [['budget', 'Grocery budget'], ['nutrition', 'Nutrition goals'], ['equipment', 'Kitchen equipment']];
 const DIET_OPTIONS = ['Vegan', 'Vegetarian', 'Pescatarian'];
-const ALLERGY_OPTIONS = ['Milk', 'Eggs', 'Fish', 'Crustacean shellfish', 'Tree nuts', 'Peanuts', 'Wheat', 'Soy', 'Sesame'];
+const ALLERGY_OPTIONS = Object.keys(ALLERGEN_TERMS);
 function preferenceSelections(key) {
   const selections = S.prefs[key];
   return Array.isArray(selections) ? selections : [];
