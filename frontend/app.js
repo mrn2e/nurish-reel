@@ -20,11 +20,16 @@ const fresh = () => ({
   collections: SEED_COLLECTIONS.map(c => ({ ...c, ids: [...c.ids] })),
   comments: JSON.parse(JSON.stringify(SEED_COMMENTS)),
   goal: 2000, log: {}, history: {}, bio: '', follows: 128, followers: 342, reposts: ['bulgogi'],
-  prefs: { diets: [], allergies: [], budget: '$60 / week', nutrition: '2,000 kcal goal', equipment: 'Stovetop, oven, blender' }
+  theme: null, prefs: { diets: [], allergies: [], budget: '$60 / week', nutrition: '2,000 kcal goal', equipment: 'Stovetop, oven, blender' }
 });
 let S = fresh();
 try { const raw = localStorage.getItem(KEY); if (raw) S = { ...fresh(), ...JSON.parse(raw) }; } catch (e) {}
 S.prefs = { ...fresh().prefs, ...(S.prefs || {}) };
+const darkQuery = window.matchMedia ? matchMedia('(prefers-color-scheme: dark)') : null;
+const currentTheme = () => S.theme || (darkQuery && darkQuery.matches ? 'dark' : 'light');
+const applyTheme = () => { document.documentElement.dataset.theme = currentTheme(); };
+applyTheme();
+if (darkQuery) darkQuery.addEventListener('change', () => { if (!S.theme) applyTheme(); });
 if (!S.log[dayKey()]) {
   S.log[dayKey()] = { breakfast: [{ id: 'veggiesoup', s: 1 }], lunch: [{ id: 'katsudon', s: 1 }], dinner: [{ id: 'meatballs', s: 1 }], snacks: [] };
 }
@@ -117,6 +122,7 @@ function poster(r, crop) {
 
 /* ---------- icons ---------- */
 const I = {
+  trash: '<svg viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>',
   heart: '<svg viewBox="0 0 24 24"><path d="M12 21s-8-5.2-8-11.2A4.6 4.6 0 0 1 12 7a4.6 4.6 0 0 1 8 2.8C20 15.8 12 21 12 21z"/></svg>',
   chat: '<svg viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/></svg>',
   mark: '<svg viewBox="0 0 24 24"><path d="M6 3h12v18l-6-4.5L6 21z"/></svg>',
@@ -140,7 +146,7 @@ const I = {
 const stepper = (ctx, id, val) => `<div class="stepper" role="group" aria-label="Servings"><button data-a="step" data-ctx="${ctx}" data-id="${id}" data-d="-1" aria-label="Fewer">&minus;</button><span>${val}</span><button data-a="step" data-ctx="${ctx}" data-id="${id}" data-d="1" aria-label="More">+</button></div>`;
 let toastT;
 function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), 2000); }
-function openSheet(html, mount) { $('#sheet-body').innerHTML = html; $('#sheet').hidden = false; mount && mount($('#sheet-body')); }
+function openSheet(html, mount) { const tt = $('#toast'); if (tt) { tt.classList.remove('on'); clearTimeout(toastT); } $('#sheet-body').innerHTML = html; $('#sheet').hidden = false; mount && mount($('#sheet-body')); }
 function closeSheet() { $('#sheet').hidden = true; }
 const guessMeal = () => { const h = new Date().getHours(); return h < 11 ? 'breakfast' : h < 16 ? 'lunch' : h < 21 ? 'dinner' : 'snacks'; };
 const kcalOf = e => { const r = byId(e.id); return r ? per(r).calories * e.s : 0; };
@@ -232,8 +238,8 @@ function renderNutrition() {
     const gy = H - 26 - (S.goal / max) * (H - 40);
     const avg = Math.round(days.reduce((a, d) => a + d.v, 0) / 7), under = days.filter(d => d.v && d.v <= S.goal).length;
     h += `<div class="week"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Calories for the last seven days">
-      ${days.map((d, i) => { const bh = (d.v / max) * (H - 40), x = i * (bw + gap); return `<rect x="${x}" y="${H - 26 - bh}" width="${bw}" height="${bh}" rx="8" fill="${d.today ? '#E05B49' : '#1E4635'}"/><text x="${x + bw / 2}" y="${H - 8}" text-anchor="middle" font-size="13" fill="#8A8275" font-family="Figtree">${d.l}</text>`; }).join('')}
-      <line x1="0" x2="${W}" y1="${gy}" y2="${gy}" stroke="#E0A43B" stroke-width="2" stroke-dasharray="5 5"/><text x="${W}" y="${gy - 6}" text-anchor="end" font-size="12" fill="#C44A39" font-family="Figtree" font-weight="600">goal ${S.goal}</text></svg></div>
+      ${days.map((d, i) => { const bh = (d.v / max) * (H - 40), x = i * (bw + gap); return `<rect x="${x}" y="${H - 26 - bh}" width="${bw}" height="${bh}" rx="8" style="fill:${d.today ? 'var(--coral)' : 'var(--chart-bar)'}"/><text x="${x + bw / 2}" y="${H - 8}" text-anchor="middle" font-size="13" style="fill:var(--mute)" font-family="Figtree">${d.l}</text>`; }).join('')}
+      <line x1="0" x2="${W}" y1="${gy}" y2="${gy}" style="stroke:var(--gold)" stroke-width="2" stroke-dasharray="5 5"/><text x="${W}" y="${gy - 6}" text-anchor="end" font-size="12" style="fill:var(--coral-ink)" font-family="Figtree" font-weight="600">goal ${S.goal}</text></svg></div>
     <div class="week-stats"><div><b>${avg.toLocaleString()}</b><span>average kcal per day</span></div><div><b>${under}/7</b><span>days at or under goal</span></div></div>`;
   }
   el.innerHTML = h;
@@ -376,14 +382,18 @@ function preferenceDropdown(key, label, options) {
     <div class="pref-options">${options.map(option => `<label><input type="checkbox" data-pref-group="${key}" value="${esc(option)}" ${selections.includes(option) ? 'checked' : ''}><span>${esc(option)}</span></label>`).join('')}</div>
   </details>`;
 }
+function themeRow() {
+  const dark = currentTheme() === 'dark';
+  return `<button class="pref-switch" role="switch" aria-checked="${dark}" data-a="toggleTheme"><span>Dark mode</span><span class="ps-sub">${dark ? 'On' : 'Off'}</span><span class="switch" aria-hidden="true"></span></button>`;
+}
 function renderProfile() {
   const el = $('#screen-profile'), t = ui.profTab, mine = S.uploaded;
   const saved = new Set(S.collections.flatMap(c => c.ids)).size + S.liked.length;
   const tabs = [['posts', I.grid], ['upload', I.plus], ['reposts', I.repost], ['prefs', I.note]];
   let body = '';
-  if (t === 'posts') body = mine.length ? `<div class="grid3">${mine.map(r => `<button data-a="openPost" data-id="${r.id}">${poster(r, true)}<small>${esc(r.title)}</small></button>`).join('')}</div>` : `<div class="empty"><b>No posts yet</b>Upload a cooking video with the plus tab and it becomes a recipe.</div>`;
+  if (t === 'posts') body = mine.length ? `<div class="grid3">${mine.map(r => `<div class="post-tile"><button class="open" data-a="openPost" data-id="${r.id}">${poster(r, true)}<small>${esc(r.title)}</small></button><button class="del" data-a="askDelete" data-id="${r.id}" aria-label="Delete ${esc(r.title)}">${I.trash}</button></div>`).join('')}</div>` : `<div class="empty"><b>No posts yet</b>Upload a cooking video with the plus tab and it becomes a recipe.</div>`;
   if (t === 'reposts') { const ids = [...new Set([...S.liked, ...S.reposts])]; body = `<div class="grid3">${ids.map(byId).filter(Boolean).map(r => `<button data-a="openPost" data-id="${r.id}" data-from="liked">${poster(r, true)}<small>${esc(r.title)}</small></button>`).join('')}</div>`; }
-  if (t === 'prefs') body = `<div class="pref-list">${preferenceDropdown('diets', 'Diets', DIET_OPTIONS)}${preferenceDropdown('allergies', 'Allergies', ALLERGY_OPTIONS)}${PREFS.map(([k, lab]) => `<button class="pref" data-a="editPref" data-k="${k}">${esc(lab)}<span class="chev">${I.arrow}</span></button>`).join('')}</div>`;
+  if (t === 'prefs') body = `<div class="pref-list">${themeRow()}${preferenceDropdown('diets', 'Diets', DIET_OPTIONS)}${preferenceDropdown('allergies', 'Allergies', ALLERGY_OPTIONS)}${PREFS.map(([k, lab]) => `<button class="pref" data-a="editPref" data-k="${k}">${esc(lab)}<span class="chev">${I.arrow}</span></button>`).join('')}</div>`;
   if (t === 'upload') body = uploadHTML();
   el.innerHTML = `
   <div class="p-head"><span class="eyebrow">Your space</span><h1 class="page-title">Hey, Maya</h1><p class="page-sub">Your kitchen, your rules.</p>
@@ -401,6 +411,7 @@ function uploadHTML() {
   const idx = STAGES.findIndex(s => s[0] === u.stage);
   return `<div class="up"><label class="drop" id="drop"><b>Drop a cooking video</b><span>${u.video ? esc(u.video.name) : 'or tap to choose a file'}</span><input type="file" id="vid" accept="video/*"></label>
   <div class="file-line"><span>Captions (optional): <b>${u.captions ? esc(u.captions.name) : 'none'}</b></span><label class="small-link" style="cursor:pointer">Add .srt or .vtt<input type="file" id="cap" accept=".srt,.vtt" hidden></label></div>
+  <label class="name-field">Video name<input type="text" id="post-title" maxlength="80" value="${esc(u.title || '')}" placeholder="Name your video" ${running ? 'disabled' : ''}><span>Becomes the recipe title on Discover and in your profile. Leave blank to use the generated title.</span></label>
   <label class="post-caption">Post caption (optional)<textarea id="post-caption" placeholder="Add a note about this recipe..." aria-label="Post caption" ${running ? 'disabled' : ''}>${esc(u.caption || '')}</textarea><span>Shown with your video on Discover. Leave blank to use the recipe summary.</span></label>
   <button class="big-btn alt" data-a="process" ${u.video && !running ? '' : 'disabled style="opacity:.4"'}>${running ? 'Working' : 'Turn it into a recipe'}</button>
   ${u.state ? `<ul class="stages">${STAGES.map(([k, l], i) => `<li class="${u.state === 'done' || i < idx ? 'done' : i === idx ? 'run' : ''}"><i></i>${l}</li>`).join('')}</ul>` : ''}
@@ -409,21 +420,31 @@ function uploadHTML() {
 }
 function resultHTML(r) {
   const p = per(r);
-  return `<div class="result"><h3>${esc(r.title)}</h3><p>${r.ingredients.length} ingredients, ${r.steps.length} steps, serves ${r.servings}. About ${Math.round(p.calories)} kcal per serving.</p>
+  return `<div class="result"><label class="name-field">Video name<input type="text" id="result-title" maxlength="80" value="${esc(r.title)}" aria-label="Video name"></label><p>${r.ingredients.length} ingredients, ${r.steps.length} steps, serves ${r.servings}. About ${Math.round(p.calories)} kcal per serving.</p>
   <div class="row"><button class="big-btn" data-a="postIt">Post to Discover</button><button class="big-btn alt" data-a="cartResult">Shop it</button></div></div>`;
+}
+const prettyName = n => { const s = String(n || '').replace(/\.[^.]+$/, '').replace(/[-_]+/g, ' ').trim(); return s ? s[0].toUpperCase() + s.slice(1) : ''; };
+function chooseVideo(f) {
+  if (!f) return;
+  const u = ui.up || {};
+  ui.up = { ...u, video: f, title: u.titleEdited ? u.title : prettyName(f.name) };
+  renderProfile();
 }
 function bindUpload(el) {
   const v = $('#vid', el), c = $('#cap', el), d = $('#drop', el), caption = $('#post-caption', el);
-  v && v.addEventListener('change', () => { ui.up = { ...(ui.up || {}), video: v.files[0] }; renderProfile(); });
+  v && v.addEventListener('change', () => chooseVideo(v.files[0]));
   c && c.addEventListener('change', () => { ui.up = { ...(ui.up || {}), captions: c.files[0] }; renderProfile(); });
   caption && caption.addEventListener('input', () => { ui.up = { ...(ui.up || {}), caption: caption.value }; });
+  const title = $('#post-title', el), rtitle = $('#result-title', el);
+  title && title.addEventListener('input', () => { ui.up = { ...(ui.up || {}), title: title.value, titleEdited: true }; });
+  rtitle && rtitle.addEventListener('input', () => { if (ui.up && ui.up.result) ui.up.result.title = rtitle.value; });
   if (d) { ['dragover', 'dragenter'].forEach(e => d.addEventListener(e, ev => { ev.preventDefault(); d.classList.add('over'); })); ['dragleave', 'drop'].forEach(e => d.addEventListener(e, () => d.classList.remove('over')));
-    d.addEventListener('drop', ev => { ev.preventDefault(); const f = ev.dataTransfer.files[0]; if (f) { ui.up = { ...(ui.up || {}), video: f }; renderProfile(); } }); }
+    d.addEventListener('drop', ev => { ev.preventDefault(); const f = ev.dataTransfer.files[0]; if (f) chooseVideo(f); }); }
 }
-function toRecipe(res, file, caption) {
+function toRecipe(res, file, caption, title) {
   const r = res.recipe, id = 'up-' + Date.now().toString(36), pals = SEED_RECIPES.map(x => x.palette);
   return {
-    id, title: r.title, creator: 'mayamakes', summary: r.summary, caption: (caption || '').trim() || r.summary || '', servings: r.servings || 2, shelfDays: 3, likes: 0,
+    id, title: (title || '').trim() || r.title, creator: 'mayamakes', summary: r.summary, caption: (caption || '').trim() || r.summary || '', servings: r.servings || 2, shelfDays: 3, likes: 0,
     tags: r.tags || [], palette: pals[hash(id) % pals.length], videoUrl: file ? URL.createObjectURL(file) : undefined,
     ingredients: (r.ingredients || []).map(i => ({ name: i.name, quantity: i.quantity, unit: i.unit || '', note: i.note })),
     steps: r.steps || [], nutrition_total: r.nutrition_total || { calories: 0, protein_g: 0, fat_g: 0, carbs_g: 0, fiber_g: 0, sugar_g: 0, sodium_mg: 0 }
@@ -441,7 +462,7 @@ async function process() {
       if (s.status === 'completed') break;
       renderProfile();
     }
-    u.result = toRecipe(await Api.result(job_id), u.video, u.caption); u.state = 'done';
+    u.result = toRecipe(await Api.result(job_id), u.video, u.caption, u.title); u.state = 'done';
   } catch (e) {
     if (e.server) { u.state = null; u.error = e.message; }
     else {
@@ -451,7 +472,7 @@ async function process() {
       u.result = toRecipe({ recipe: { title: name ? name[0].toUpperCase() + name.slice(1) : 'Untitled recipe', summary: 'Processed from your upload.', servings: 2, tags: ['new'],
         ingredients: [{ name: 'olive oil', quantity: 2, unit: 'tbsp' }, { name: 'garlic cloves', quantity: 3, unit: '' }, { name: 'tomatoes', quantity: 4, unit: '' }, { name: 'pasta', quantity: 200, unit: 'g' }],
         steps: [{ number: 1, instruction: 'Sample step from the stub pipeline.' }, { number: 2, instruction: 'Serve warm.' }],
-        nutrition_total: { calories: 820, protein_g: 24, fat_g: 28, carbs_g: 110, fiber_g: 8, sugar_g: 12, sodium_mg: 900 } } }, u.video, u.caption);
+        nutrition_total: { calories: 820, protein_g: 24, fat_g: 28, carbs_g: 110, fiber_g: 8, sugar_g: 12, sodium_mg: 900 } } }, u.video, u.caption, u.title);
       u.state = 'done';
     }
   }
@@ -536,6 +557,25 @@ const A = {
   openPost(el) { const ids = el.dataset.from ? [...new Set([...S.liked, ...S.reposts])] : S.uploaded.map(r => r.id); openViewer(el.dataset.from ? 'Liked' : 'My videos', ids, el.dataset.id); },
   closeViewer() { $('#viewer').hidden = true; $('#viewer').innerHTML = ''; $('#phone').classList.remove('viewing'); },
   closeSheet,
+  toggleTheme(el) {
+    S.theme = currentTheme() === 'dark' ? 'light' : 'dark'; save(); applyTheme();
+    const dark = S.theme === 'dark'; el.setAttribute('aria-checked', dark); $('.ps-sub', el).textContent = dark ? 'On' : 'Off';
+  },
+  askDelete(el) {
+    const r = S.uploaded.find(x => x.id === el.dataset.id); if (!r) return;
+    openSheet(`<h3>Delete this video?</h3><p class="sheet-note">&ldquo;${esc(r.title)}&rdquo; will be removed from Discover, your collections, Pantry list and nutrition log. This can't be undone.</p><button class="danger-btn" data-a="confirmDelete" data-id="${r.id}">Delete video</button><button class="ghost-btn" data-a="closeSheet">Cancel</button>`);
+  },
+  confirmDelete(el) {
+    const id = el.dataset.id, r = S.uploaded.find(x => x.id === id); if (!r) return closeSheet();
+    if (r.videoUrl) { try { URL.revokeObjectURL(r.videoUrl); } catch (e) {} }
+    S.uploaded = S.uploaded.filter(x => x.id !== id);
+    S.collections.forEach(c => { c.ids = c.ids.filter(i => i !== id); });
+    S.liked = S.liked.filter(i => i !== id); S.reposts = S.reposts.filter(i => i !== id);
+    S.cart = S.cart.filter(c => c.id !== id); S.made = S.made.filter(m => m.id !== id);
+    delete S.checked[id]; delete S.comments[id]; delete ui.reelServ[id]; delete ui.captionExpanded[id];
+    Object.values(S.log).forEach(day => MEALS.forEach(m => { day[m] = (day[m] || []).filter(e => e.id !== id); }));
+    save(); closeSheet(); reelsBuilt && renderFeed(); renderProfile(); toast('Video deleted');
+  },
   profTab: el => { ui.profTab = el.dataset.v; renderProfile(); },
   editProfile() { openSheet(`<h3>Edit profile</h3><p class="cmt" style="border:0;color:var(--mute)">Your bio</p><input type="text" id="bi" value="${esc(S.bio)}" placeholder="What do you cook?" maxlength="120" aria-label="Bio"><button class="big-btn" data-a="saveBio" style="margin:12px 0 0">Save</button>`, b => $('#bi', b).focus()); },
   saveBio() { S.bio = $('#bi').value.trim(); save(); closeSheet(); renderProfile(); },
@@ -550,8 +590,8 @@ const A = {
   process,
   apiUrl(el, e) { e.preventDefault(); openSheet(`<h3>Backend URL</h3><input type="text" id="au" value="${esc(Api.base())}" aria-label="API base URL"><button class="big-btn" data-a="saveApi" style="margin:12px 0 0">Save</button>`); },
   saveApi() { localStorage.setItem('nurish.api', $('#au').value.trim()); closeSheet(); renderProfile(); },
-  postIt() { const r = ui.up.result; r.caption = (ui.up.caption || '').trim() || r.summary || ''; S.uploaded.unshift(r); save(); reelsBuilt && renderFeed(); ui.up = null; ui.profTab = 'posts'; renderProfile(); toast('Posted to Discover'); },
-  cartResult() { const r = ui.up.result; r.caption = (ui.up.caption || '').trim() || r.summary || ''; S.uploaded.unshift(r); S.cart.push({ id: r.id, s: r.servings }); save(); reelsBuilt && renderFeed(); ui.up = null; ui.profTab = 'posts'; renderProfile(); toast('Posted and added to Pantry list'); }
+  postIt() { const r = ui.up.result; r.title = (r.title || '').trim() || 'Untitled recipe'; r.caption = (ui.up.caption || '').trim() || r.summary || ''; S.uploaded.unshift(r); save(); reelsBuilt && renderFeed(); ui.up = null; ui.profTab = 'posts'; renderProfile(); toast('Posted to Discover'); },
+  cartResult() { const r = ui.up.result; r.title = (r.title || '').trim() || 'Untitled recipe'; r.caption = (ui.up.caption || '').trim() || r.summary || ''; S.uploaded.unshift(r); S.cart.push({ id: r.id, s: r.servings }); save(); reelsBuilt && renderFeed(); ui.up = null; ui.profTab = 'posts'; renderProfile(); toast('Posted and added to Pantry list'); }
 };
 document.addEventListener('click', e => {
   const el = e.target.closest('[data-a]'); if (!el || el.tagName === 'INPUT') return;
