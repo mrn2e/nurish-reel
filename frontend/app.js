@@ -277,13 +277,12 @@ function reelHTML(r) {
   const following = S.following.includes(r.creator);
   const initial = (r.creator || 'you')[0].toUpperCase();
   return `<article class="reel" data-id="${r.id}"><div class="pager" tabindex="-1">
-  <div class="pane info" aria-label="Nutrition"><h2>${esc(r.title)}</h2><p class="sub">Nutrition per serving</p><div class="pie-wrap">${pie(r)}</div>
+  <div class="pane info" aria-label="Nutrition"><div class="pane-scroll"><h2>${esc(r.title)}</h2><p class="sub">Nutrition per serving</p><div class="pie-wrap">${pie(r)}</div>
     <ul class="legend">${MACROS.map(([n, k, c]) => `<li><i style="background:${c}"></i><div><b>${Math.round(p[k])} g</b><span>${n}</span></div></li>`).join('')}</ul>
     <p class="sub" style="margin-top:16px">Sodium ${Math.round(p.sodium_mg)} mg · sugar ${Math.round(p.sugar_g)} g</p>
-    <button class="big-btn" data-a="logFromReel" data-id="${r.id}">Log a serving</button><button class="edge r" data-a="pane" data-p="1">Video</button></div>
+    <button class="big-btn" data-a="logFromReel" data-id="${r.id}">Log a serving</button></div><button class="edge r" data-a="pane" data-p="1">Video</button></div>
   <div class="pane video">${r.videoUrl ? `<video src="${r.videoUrl}" loop muted playsinline data-a="vid"></video>` : poster(r)}<div class="shade"></div>
     <button class="edge l" data-a="pane" data-p="0">Nutrition</button><button class="edge r" data-a="pane" data-p="2">Recipe</button>
-    <div class="r-avatar">${initial}${following ? '' : `<button class="plus" data-a="follow" data-id="${r.id}" aria-label="Follow">+</button>`}</div>
     <div class="caption">
       <span class="match-pill"><svg viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg>${matchPct(r)}% pantry match</span>
       <div class="who">@${esc(r.creator || 'you')}${following ? '' : `<button class="follow" data-a="follow" data-id="${r.id}">Follow</button>`}</div>
@@ -296,12 +295,13 @@ function reelHTML(r) {
       </div>
     </div>
     <div class="rail">
+      <div class="r-avatar">${initial}${following ? '' : `<button class="plus" data-a="follow" data-id="${r.id}" aria-label="Follow">+</button>`}</div>
       <button data-a="like" data-id="${r.id}" aria-pressed="${liked}" aria-label="Like"><span class="ic heart">${I.heart}</span><span class="n">${fmtK((r.likes || 0) + (liked ? 1 : 0))}</span></button>
       <button data-a="comments" data-id="${r.id}" aria-label="Comments"><span class="ic">${I.chat}</span><span class="cn">${cmts}</span></button>
       <button class="save" data-a="saveSheet" data-id="${r.id}" aria-pressed="${saved}" aria-label="Save"><span class="ic">${I.mark}</span><span>${fmtK(1200)}</span></button>
       <button data-a="shareSheet" data-id="${r.id}" aria-label="Share"><span class="ic">${I.share}</span><span>Share</span></button></div>
     </div>
-  <div class="pane info" aria-label="Recipe" data-recipe="${r.id}">${recipePane(r, s)}<button class="edge l" data-a="pane" data-p="1">Video</button></div>
+  <div class="pane info" aria-label="Recipe" data-recipe="${r.id}"><div class="pane-scroll">${recipePane(r, s)}</div><button class="edge l" data-a="pane" data-p="1">Video</button></div>
   </div></article>`;
 }
 const fmtK = n => n >= 1000 ? (n / 1000).toFixed(1).replace(/\.0$/, '') + 'k' : String(n);
@@ -477,7 +477,7 @@ const A = {
     const { ctx, id } = el.dataset, d = +el.dataset.d;
     if (ctx === 'reel') {
       const r = byId(id), s = Math.max(1, Math.min(24, (ui.reelServ[id] || r.servings || 2) + d)); ui.reelServ[id] = s;
-      $$(`[data-recipe="${id}"]`).forEach(p => { const sc = p.scrollTop; p.innerHTML = recipePane(r, s) + '<button class="edge l" data-a="pane" data-p="1">Video</button>'; p.scrollTop = sc; });
+      $$(`[data-recipe="${id}"] .pane-scroll`).forEach(p => { const sc = p.scrollTop; p.innerHTML = recipePane(r, s); p.scrollTop = sc; });
     }
   },
   chip(el) { ui.chip = el.dataset.v; $$('#chips button').forEach(b => b.setAttribute('aria-pressed', b === el)); renderFeed(); },
