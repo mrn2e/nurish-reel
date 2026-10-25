@@ -35,9 +35,11 @@ class Settings(BaseSettings):
     aws_access_key_id: str = ""
     aws_secret_access_key: str = ""
 
-    # Transcription + LLM structuring (both use Gemini)
+    # Transcription + LLM structuring (both use Gemini).
+    # Use a floating "-latest" alias so the model keeps resolving as Google
+    # rotates versions (the pinned gemini-1.5-* names were retired and 404).
     gemini_api_key: str = ""
-    gemini_model: str = "gemini-1.5-flash"
+    gemini_model: str = "gemini-flash-latest"
 
     # Nutrition (USDA FoodData Central)
     usda_api_key: str = ""

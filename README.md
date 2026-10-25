@@ -126,6 +126,7 @@ optional; absent keys activate the stub fallbacks above.
 | Variable | Purpose |
 |----------|---------|
 | `GEMINI_API_KEY` | Audio transcription **and** recipe structuring (JSON output) |
+| `GEMINI_MODEL` | Gemini model name (default `gemini-flash-latest`; pinned `gemini-1.5-*` names are retired and 404) |
 | `USDA_API_KEY` | Nutrition lookup ([sign up](https://fdc.nal.usda.gov/api-key-signup.html)) |
 | `CORS_ORIGINS` | Comma-separated frontend origins allowed in prod (ignored in dev) |
 | `DATABASE_URL` | SQLite (default) or Postgres |
@@ -190,6 +191,13 @@ If uploads return *"Gemini transcription was not run…"*, check in order:
    Vercel env vars are invisible to the Render backend.
 3. The backend image has `ffmpeg` (the provided `Dockerfile` installs it). No
    ffmpeg → no audio → stub, even with a valid key.
+4. If the stub message includes `(error: 404 models/... is not found)`, the
+   `GEMINI_MODEL` is retired. Use `gemini-flash-latest` (the default), or list
+   what your key supports:
+   ```bash
+   curl -s "https://generativelanguage.googleapis.com/v1beta/models?key=YOUR_KEY" \
+     | grep -o '"name": "models/[^"]*"'
+   ```
 
 ## Production notes (swap points)
 
