@@ -1,121 +1,152 @@
 /* Seed content. Shapes mirror app/models/recipe.py so API results drop straight in.
-   nutrition_total is for the whole recipe; per serving = total / servings. */
+   nutrition_total is for the whole recipe; per serving = total / servings.
+   videoUrl points at the demo reels hosted on Cloudinary; the delivery URL is
+   normalized to H.264 MP4 (f_mp4,vc_h264) so it plays in every browser
+   regardless of the source codec/container. */
 const SEED_RECIPES = [
   {
-    id: 'katsudon', title: 'Chicken Katsudon', creator: 'mika.cooks', servings: 2, shelfDays: 3,
-    caption: 'Crisp cutlet, soft egg, sweet dashi. Ten minutes once the chicken is fried.',
-    tags: ['chicken', 'rice', 'japanese'], likes: 2412, palette: ['#F2C230', '#E08A2B', '#D9A441', '#F6E7A1', '#1B2A33'],
+    id: 'beef-pasta', title: 'Creamy Beef Tomato Pasta', creator: 'nurish.kitchen', servings: 4, shelfDays: 3,
+    caption: 'Ground beef, a creamy tomato sauce, and twirly pasta. One skillet, weeknight easy.',
+    tags: ['beef', 'pasta', 'dinner'], likes: 3184, palette: ['#D9452F', '#7A2A24', '#E08A2B', '#F0C27B', '#1B1412'],
+    videoUrl: 'https://res.cloudinary.com/az96zvxn/video/upload/f_mp4,vc_h264/v1792943111/reel-1.mp4.mp4',
     ingredients: [
-      { name: 'chicken tenderloin', quantity: 300, unit: 'g' }, { name: 'sake', quantity: 2, unit: 'tbsp' },
-      { name: 'mirin', quantity: 2, unit: 'tbsp' }, { name: 'dashi', quantity: 150, unit: 'ml' },
-      { name: 'onions', quantity: 2, unit: '' }, { name: 'eggs', quantity: 3, unit: '' },
-      { name: 'panko', quantity: 1, unit: 'cup' }, { name: 'soy sauce', quantity: 2, unit: 'tbsp' },
-      { name: 'cooked rice', quantity: 2, unit: 'cups' }
+      { name: 'ground beef', quantity: 1, unit: 'lb' },
+      { name: 'onion', quantity: 1, unit: '', note: 'small, diced' },
+      { name: 'red bell pepper', quantity: 1, unit: '', note: 'diced' },
+      { name: 'garlic cloves', quantity: 4, unit: '', note: 'minced' },
+      { name: 'tomato paste', quantity: 3, unit: 'tbsp' },
+      { name: 'beef broth', quantity: 2, unit: 'cups' },
+      { name: 'heavy cream', quantity: 1, unit: 'cup' },
+      { name: 'fusilli or rotini pasta', quantity: 12, unit: 'oz' },
+      { name: 'italian seasoning', quantity: 1, unit: 'tsp' },
+      { name: 'olive oil', quantity: 1, unit: 'tbsp' }
     ],
     steps: [
-      { number: 1, instruction: 'Pound the tenderloin flat, season, then dredge in flour, beaten egg and panko.' },
-      { number: 2, instruction: 'Fry at 170C until deep gold, about 4 minutes. Rest, then slice.' },
-      { number: 3, instruction: 'Simmer sliced onion in dashi, sake, mirin and soy for 3 minutes.' },
-      { number: 4, instruction: 'Lay the cutlet in the pan, pour beaten egg over, lid on for 30 seconds.' },
-      { number: 5, instruction: 'Slide everything over hot rice and serve right away.' }
+      { number: 1, instruction: 'Heat a little olive oil in a large skillet. Add the diced onion and red bell pepper and cook until softened.' },
+      { number: 2, instruction: 'Add the ground beef and cook until browned, breaking it up as it cooks. Season to taste.' },
+      { number: 3, instruction: 'Stir in the tomato paste, then add the beef broth and mix until the paste is incorporated.' },
+      { number: 4, instruction: 'Pour in the heavy cream and stir into a creamy tomato sauce.' },
+      { number: 5, instruction: 'Meanwhile, boil the pasta in salted water until al dente, then drain.' },
+      { number: 6, instruction: 'Add the pasta to the skillet and stir until thoroughly coated in the sauce.' },
+      { number: 7, instruction: 'Let everything come together for a minute or two, then serve warm.' }
     ],
-    nutrition_total: { calories: 1180, protein_g: 78, fat_g: 34, carbs_g: 130, fiber_g: 6, sugar_g: 14, sodium_mg: 2400 }
+    nutrition_total: { calories: 2960, protein_g: 128, fat_g: 168, carbs_g: 248, fiber_g: 16, sugar_g: 28, sodium_mg: 3200 }
   },
   {
-    id: 'veggiesoup', title: 'Veggie Soup', creator: 'greenhouse.jo', servings: 4, shelfDays: 5,
-    caption: 'One pot, whatever is in the crisper, better on day two.',
-    tags: ['veggie', 'soup', 'vegan'], likes: 988, palette: ['#8DB580', '#3F7A5B', '#E8A33D', '#7CC06A', '#F3EEE4'],
+    id: 'coconut-chicken', title: 'Creamy Coconut Chicken', creator: 'nurish.kitchen', servings: 3, shelfDays: 3,
+    caption: 'Tender seasoned chicken in a rich, savory coconut sauce over fluffy rice. Easy comfort. 🥥🍗',
+    tags: ['chicken', 'rice', 'coconut'], likes: 4120, palette: ['#E6C79C', '#B5793F', '#E0A43B', '#F4E3C1', '#2B2017'],
+    videoUrl: 'https://res.cloudinary.com/az96zvxn/video/upload/f_mp4,vc_h264/v1792943153/reel-2.mp4.mp4',
     ingredients: [
-      { name: 'carrots', quantity: 3, unit: '' }, { name: 'celery stalks', quantity: 2, unit: '' },
-      { name: 'yellow onion', quantity: 1, unit: '' }, { name: 'garlic cloves', quantity: 3, unit: '' },
-      { name: 'diced tomatoes', quantity: 1, unit: 'can' }, { name: 'vegetable stock', quantity: 1, unit: 'l' },
-      { name: 'white beans', quantity: 1, unit: 'can' }, { name: 'kale', quantity: 2, unit: 'cups' }
+      { name: 'boneless chicken thighs', quantity: 1, unit: 'lb' },
+      { name: 'paprika', quantity: 1, unit: 'tsp' },
+      { name: 'garlic powder', quantity: 1, unit: 'tsp' },
+      { name: 'salt', quantity: 0.5, unit: 'tsp' },
+      { name: 'black pepper', quantity: 0.5, unit: 'tsp' },
+      { name: 'oil', quantity: 1, unit: 'tbsp' },
+      { name: 'garlic cloves', quantity: 3, unit: '', note: 'minced' },
+      { name: 'onion', quantity: 1, unit: '', note: 'small, diced' },
+      { name: 'curry paste', quantity: 1, unit: 'tbsp', note: 'or paprika' },
+      { name: 'coconut milk', quantity: 1, unit: 'cup' },
+      { name: 'chicken broth', quantity: 0.5, unit: 'cup' },
+      { name: 'cooked white rice', quantity: 3, unit: 'cups' },
+      { name: 'green onions', quantity: 2, unit: '', note: 'for garnish' }
     ],
     steps: [
-      { number: 1, instruction: 'Sweat onion, carrot and celery in olive oil for 8 minutes.' },
-      { number: 2, instruction: 'Add garlic, tomatoes and stock. Simmer 20 minutes.' },
-      { number: 3, instruction: 'Stir in beans and kale, cook 5 more minutes, season well.' }
+      { number: 1, instruction: 'Season the chicken with paprika, garlic powder, salt and pepper, massaging it in.' },
+      { number: 2, instruction: 'Heat oil in a skillet and sear the chicken on both sides until golden. Remove and set aside.' },
+      { number: 3, instruction: 'Sauté the onion and garlic in the same skillet.' },
+      { number: 4, instruction: 'Add the curry paste (or paprika), then the coconut milk and chicken broth.' },
+      { number: 5, instruction: 'Simmer until the sauce begins to thicken.' },
+      { number: 6, instruction: 'Return the chicken to the skillet and cook until it reaches 165°F internally.' },
+      { number: 7, instruction: 'Slice the chicken and serve over rice with the coconut sauce and green onions.' }
     ],
-    nutrition_total: { calories: 760, protein_g: 32, fat_g: 14, carbs_g: 124, fiber_g: 30, sugar_g: 28, sodium_mg: 2100 }
+    nutrition_total: { calories: 1980, protein_g: 108, fat_g: 96, carbs_g: 168, fiber_g: 8, sugar_g: 10, sodium_mg: 2400 }
   },
   {
-    id: 'meatballs', title: 'Meatballs', creator: 'nonna.lu', servings: 4, shelfDays: 4,
-    caption: 'Milk-soaked bread is the whole secret. Do not skip it.',
-    tags: ['beef', 'pork', 'italian'], likes: 5120, palette: ['#D9452F', '#7A2A24', '#8A4B2C', '#C46B3A', '#EEE6D8'],
+    id: 'garlic-soy-chicken', title: 'Garlic Soy Glazed Chicken', creator: 'nurish.kitchen', servings: 3, shelfDays: 3,
+    caption: 'Crispy chicken thighs in a glossy sweet-and-savory garlic soy glaze over rice. 🍚🍗',
+    tags: ['chicken', 'rice', 'asian'], likes: 5260, palette: ['#8A4B2C', '#4A2616', '#E0A43B', '#C98B4A', '#1A120C'],
+    videoUrl: 'https://res.cloudinary.com/az96zvxn/video/upload/f_mp4,vc_h264/v1792943440/reel-3.mp4.mov',
     ingredients: [
-      { name: 'ground beef', quantity: 400, unit: 'g' }, { name: 'ground pork', quantity: 200, unit: 'g' },
-      { name: 'bread', quantity: 2, unit: 'slices' }, { name: 'milk', quantity: 80, unit: 'ml' },
-      { name: 'parmesan', quantity: 50, unit: 'g' }, { name: 'egg', quantity: 1, unit: '' },
-      { name: 'passata', quantity: 500, unit: 'ml' }
-    ],
-    steps: [
-      { number: 1, instruction: 'Soak torn bread in milk, then mash into the meat with egg, cheese and salt.' },
-      { number: 2, instruction: 'Roll into plum-sized balls and brown on all sides.' },
-      { number: 3, instruction: 'Finish in simmering passata for 15 minutes.' }
-    ],
-    nutrition_total: { calories: 2280, protein_g: 168, fat_g: 148, carbs_g: 74, fiber_g: 6, sugar_g: 18, sodium_mg: 3100 }
-  },
-  {
-    id: 'bulgogi', title: 'Beef Bulgogi Bowl', creator: 'seoul.supper', servings: 2, shelfDays: 3,
-    caption: 'Pear in the marinade, thin slices, screaming hot pan.',
-    tags: ['beef', 'rice', 'korean'], likes: 3304, palette: ['#2B3F4F', '#14201B', '#5B2E22', '#E0B36A', '#E8E1D0'],
-    ingredients: [
-      { name: 'thin sliced ribeye', quantity: 350, unit: 'g' }, { name: 'soy sauce', quantity: 3, unit: 'tbsp' },
-      { name: 'asian pear, grated', quantity: 0.5, unit: '' }, { name: 'garlic cloves', quantity: 3, unit: '' },
-      { name: 'sesame oil', quantity: 1, unit: 'tbsp' }, { name: 'scallions', quantity: 3, unit: '' },
-      { name: 'cooked rice', quantity: 2, unit: 'cups' }
-    ],
-    steps: [
-      { number: 1, instruction: 'Marinate the beef in soy, pear, garlic and sesame oil for 30 minutes.' },
-      { number: 2, instruction: 'Sear in small batches in a very hot pan.' },
-      { number: 3, instruction: 'Serve over rice with scallions.' }
-    ],
-    nutrition_total: { calories: 1240, protein_g: 74, fat_g: 48, carbs_g: 120, fiber_g: 4, sugar_g: 16, sodium_mg: 2800 }
-  },
-  {
-    id: 'gyoza', title: 'Pork Gyoza', creator: 'mika.cooks', servings: 4, shelfDays: 2,
-    caption: 'Fry, add water, lid on, wait for the crackle to stop.',
-    tags: ['pork', 'dumpling', 'japanese'], likes: 1876, palette: ['#C9D6E3', '#7C98B3', '#EBD9B5', '#C98B4A', '#22303C'],
-    ingredients: [
-      { name: 'ground pork', quantity: 300, unit: 'g' }, { name: 'napa cabbage', quantity: 2, unit: 'cups' },
-      { name: 'garlic chives', quantity: 1, unit: 'bunch' }, { name: 'ginger', quantity: 1, unit: 'tbsp' },
-      { name: 'gyoza wrappers', quantity: 30, unit: '' }, { name: 'soy sauce', quantity: 1, unit: 'tbsp' }
-    ],
-    steps: [
-      { number: 1, instruction: 'Salt and squeeze the cabbage, then mix with pork, chives, ginger and soy.' },
-      { number: 2, instruction: 'Fill and pleat the wrappers.' },
-      { number: 3, instruction: 'Fry flat side down, add a splash of water, cover and steam 4 minutes.' }
-    ],
-    nutrition_total: { calories: 1320, protein_g: 70, fat_g: 62, carbs_g: 120, fiber_g: 8, sugar_g: 6, sodium_mg: 2600 }
-  },
-  {
-    id: 'cucumber', title: 'Smashed Cucumber Salad', creator: 'greenhouse.jo', servings: 2, shelfDays: 2,
-    caption: 'Hit it with a rolling pin so the dressing sticks.',
-    tags: ['veggie', 'apps', 'vegan'], likes: 742, palette: ['#CFE3A6', '#6FA070', '#9ACD7A', '#F0F3E0', '#A3412F'],
-    ingredients: [
-      { name: 'persian cucumbers', quantity: 4, unit: '' }, { name: 'rice vinegar', quantity: 2, unit: 'tbsp' },
-      { name: 'chili crisp', quantity: 1, unit: 'tbsp' }, { name: 'garlic clove', quantity: 1, unit: '' },
+      { name: 'boneless chicken thighs', quantity: 1, unit: 'lb' },
+      { name: 'cornstarch', quantity: 0.33, unit: 'cup' },
+      { name: 'salt', quantity: 0.5, unit: 'tsp' },
+      { name: 'black pepper', quantity: 0.5, unit: 'tsp' },
+      { name: 'cooking oil', quantity: 2, unit: 'tbsp' },
+      { name: 'soy sauce', quantity: 0.25, unit: 'cup' },
+      { name: 'honey', quantity: 3, unit: 'tbsp' },
+      { name: 'brown sugar', quantity: 2, unit: 'tbsp' },
+      { name: 'garlic cloves', quantity: 3, unit: '', note: 'minced' },
+      { name: 'rice vinegar', quantity: 1, unit: 'tbsp' },
+      { name: 'sesame oil', quantity: 1, unit: 'tsp' },
+      { name: 'water', quantity: 2, unit: 'tbsp' },
+      { name: 'steamed white rice', quantity: 3, unit: 'cups' },
+      { name: 'green onions', quantity: 2, unit: '', note: 'sliced' },
       { name: 'sesame seeds', quantity: 1, unit: 'tsp' }
     ],
     steps: [
-      { number: 1, instruction: 'Smash the cucumbers and tear into chunks. Salt for 10 minutes and drain.' },
-      { number: 2, instruction: 'Toss with vinegar, chili crisp, grated garlic and sesame.' }
+      { number: 1, instruction: 'Pat the chicken thighs dry and season with salt and pepper.' },
+      { number: 2, instruction: 'Coat the chicken lightly in cornstarch.' },
+      { number: 3, instruction: 'Heat oil in a skillet over medium-high heat.' },
+      { number: 4, instruction: 'Pan-fry the chicken until crispy and golden on both sides and cooked through to 165°F. Remove and set aside.' },
+      { number: 5, instruction: 'Combine soy sauce, honey, brown sugar, garlic, rice vinegar, sesame oil and water.' },
+      { number: 6, instruction: 'Pour the sauce into the skillet and simmer until thick and glossy.' },
+      { number: 7, instruction: 'Return the chicken to the pan and coat thoroughly in the glaze.' },
+      { number: 8, instruction: 'Slice and serve over rice, garnished with green onions and sesame seeds.' }
     ],
-    nutrition_total: { calories: 210, protein_g: 6, fat_g: 11, carbs_g: 24, fiber_g: 6, sugar_g: 10, sodium_mg: 900 }
+    nutrition_total: { calories: 2240, protein_g: 104, fat_g: 78, carbs_g: 268, fiber_g: 6, sugar_g: 72, sodium_mg: 3600 }
+  },
+  {
+    id: 'soy-garlic-ramen', title: 'Soy Garlic Chicken Ramen', creator: 'nurish.kitchen', servings: 2, shelfDays: 2,
+    caption: 'Creamy ramen with soy garlic chicken, jammy eggs and green onions. Pure comfort. 🍜',
+    tags: ['chicken', 'noodle', 'ramen'], likes: 6840, palette: ['#C98B4A', '#6B3F22', '#E0A43B', '#EBD9B5', '#1C140D'],
+    videoUrl: 'https://res.cloudinary.com/az96zvxn/video/upload/f_mp4,vc_h264/v1792943344/reel-4.mp4.mov',
+    ingredients: [
+      { name: 'boneless chicken thighs', quantity: 1, unit: 'lb' },
+      { name: 'maple syrup', quantity: 1, unit: 'tbsp' },
+      { name: 'black pepper', quantity: 0.5, unit: 'tsp' },
+      { name: 'paprika', quantity: 0.5, unit: 'tsp' },
+      { name: 'soy sauce', quantity: 3, unit: 'tbsp', note: '1 tbsp for chicken, 2 tbsp for broth' },
+      { name: 'oil', quantity: 1, unit: 'tbsp' },
+      { name: 'shallots', quantity: 2, unit: '', note: 'finely chopped' },
+      { name: 'garlic cloves', quantity: 3, unit: '', note: 'minced' },
+      { name: 'ginger', quantity: 1, unit: 'tbsp', note: 'minced' },
+      { name: 'chicken broth', quantity: 2, unit: 'cups' },
+      { name: 'milk or unsweetened soy milk', quantity: 1, unit: 'cup' },
+      { name: 'miso paste', quantity: 1, unit: 'tbsp', note: 'optional' },
+      { name: 'ramen noodles', quantity: 2, unit: 'portions' },
+      { name: 'soft-boiled eggs', quantity: 2, unit: '' },
+      { name: 'green onions', quantity: 2, unit: '' },
+      { name: 'chili oil', quantity: 1, unit: 'tbsp' }
+    ],
+    steps: [
+      { number: 1, instruction: 'Marinate the chicken with maple syrup, black pepper, paprika and 1 tbsp soy sauce.' },
+      { number: 2, instruction: 'Sear the chicken in a hot skillet until browned and cooked through. Remove and set aside.' },
+      { number: 3, instruction: 'In a pot, sauté the shallots, garlic and ginger until fragrant.' },
+      { number: 4, instruction: 'Add 2 tbsp soy sauce and the chicken broth.' },
+      { number: 5, instruction: 'Stir in the milk and the optional miso paste.' },
+      { number: 6, instruction: 'Simmer gently for 5–8 minutes.' },
+      { number: 7, instruction: 'Cook the ramen noodles according to the package directions.' },
+      { number: 8, instruction: 'Divide the noodles and broth between bowls.' },
+      { number: 9, instruction: 'Top with sliced chicken, soft-boiled eggs, green onions and chili oil.' }
+    ],
+    nutrition_total: { calories: 1760, protein_g: 118, fat_g: 72, carbs_g: 148, fiber_g: 8, sugar_g: 24, sodium_mg: 4200 }
   }
 ];
 
 const SEED_COLLECTIONS = [
-  { id: 'fav', name: 'Favorites', ids: ['katsudon', 'meatballs'] },
-  { id: 'pork', name: 'Pork', ids: ['gyoza', 'meatballs'] },
-  { id: 'chicken', name: 'Chicken', ids: ['katsudon'] },
-  { id: 'apps', name: 'Apps', ids: ['cucumber', 'gyoza'] },
-  { id: 'soup', name: 'Soup', ids: ['veggiesoup'] },
-  { id: 'veggie', name: 'Veggie', ids: ['veggiesoup', 'cucumber'] }
+  { id: 'fav', name: 'Favorites', ids: ['soy-garlic-ramen', 'garlic-soy-chicken'] },
+  { id: 'chicken', name: 'Chicken', ids: ['coconut-chicken', 'garlic-soy-chicken', 'soy-garlic-ramen'] },
+  { id: 'beef', name: 'Beef', ids: ['beef-pasta'] },
+  { id: 'noodles', name: 'Noodles & Pasta', ids: ['beef-pasta', 'soy-garlic-ramen'] },
+  { id: 'cozy', name: 'Cozy', ids: ['soy-garlic-ramen', 'coconut-chicken'] },
+  { id: 'quick', name: 'Weeknight', ids: ['beef-pasta', 'coconut-chicken', 'garlic-soy-chicken'] }
 ];
 
 const SEED_COMMENTS = {
-  katsudon: [['ren', 'Made this last night, the egg timing is perfect.'], ['sofia_k', 'Can I use thighs instead?']],
-  meatballs: [['dan', 'The bread and milk trick changed my life.']],
-  veggiesoup: [['pia', 'Added parmesan rind. Do it.']]
+  'beef-pasta': [['ren', 'Made this last night — the creamy tomato sauce is unreal.'], ['sofia_k', 'Added a pinch of chili flakes, so good.']],
+  'coconut-chicken': [['dan', 'The coconut sauce over rice is everything.']],
+  'garlic-soy-chicken': [['pia', 'That glaze is so glossy. Cornstarch trick works.']],
+  'soy-garlic-ramen': [['mika', 'Jammy egg + chili oil = perfect bowl.']]
 };

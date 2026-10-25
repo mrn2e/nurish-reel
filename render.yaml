@@ -26,8 +26,14 @@ services:
       # Transcription + recipe structuring both use this one key.
       - key: GEMINI_API_KEY
         sync: false
+      # Structuring model (text -> recipe JSON). Floating alias avoids the
+      # retired/blocked pinned names that 404.
       - key: GEMINI_MODEL
-        value: gemini-1.5-flash
+        value: gemini-flash-latest
+      # Transcription model (audio -> text). Dedicated ASR model with its own
+      # quota; blank reuses GEMINI_MODEL.
+      - key: GEMINI_TRANSCRIPTION_MODEL
+        value: gemini-3.5-transcribe
       # Nutrition lookup (free: https://fdc.nal.usda.gov/api-key-signup.html).
       - key: USDA_API_KEY
         sync: false
