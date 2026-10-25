@@ -37,7 +37,7 @@ const save = () => {
     localStorage.setItem(KEY, JSON.stringify(copy));
   } catch (e) {}
 };
-const ui = { nutTab: 'daily', profTab: 'posts', filter: '', chip: 'all', reelServ: {}, captionMinimized: {}, captionExpanded: {}, up: null };
+const ui = { nutTab: 'daily', profTab: 'posts', filter: '', chip: 'all', reelServ: {}, captionExpanded: {}, up: null };
 
 const allRecipes = () => [...S.uploaded, ...SEED_RECIPES];
 const byId = id => allRecipes().find(r => r.id === id);
@@ -267,7 +267,6 @@ function recipePane(r, s) {
 }
 function reelHTML(r) {
   const liked = S.liked.includes(r.id), saved = S.collections.some(c => c.ids.includes(r.id)), s = ui.reelServ[r.id] || r.servings || 2, p = per(r);
-  const captionMinimized = !!ui.captionMinimized[r.id];
   const captionText = String(r.caption || r.summary || '');
   const captionChars = Array.from(captionText);
   const captionExpanded = !!ui.captionExpanded[r.id];
@@ -285,8 +284,7 @@ function reelHTML(r) {
   <div class="pane video">${r.videoUrl ? `<video src="${r.videoUrl}" loop muted playsinline data-a="vid"></video>` : poster(r)}<div class="shade"></div>
     <button class="edge l" data-a="pane" data-p="0">Nutrition</button><button class="edge r" data-a="pane" data-p="2">Recipe</button>
     <div class="r-avatar">${initial}${following ? '' : `<button class="plus" data-a="follow" data-id="${r.id}" aria-label="Follow">+</button>`}</div>
-    <div class="caption${captionMinimized ? ' minimized' : ''}">
-      <div class="caption-tools"><button class="caption-toggle" data-a="toggleCaption" data-id="${r.id}" aria-label="${captionMinimized ? 'Show' : 'Minimize'} caption" aria-pressed="${captionMinimized}">${captionMinimized ? 'Show caption' : 'Minimize'}</button></div>
+    <div class="caption">
       <span class="match-pill"><svg viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg>${matchPct(r)}% pantry match</span>
       <div class="who">@${esc(r.creator || 'you')}${following ? '' : `<button class="follow" data-a="follow" data-id="${r.id}">Follow</button>`}</div>
       <h2>${esc(r.title)}</h2>
@@ -302,7 +300,7 @@ function reelHTML(r) {
       <button data-a="comments" data-id="${r.id}" aria-label="Comments"><span class="ic">${I.chat}</span><span class="cn">${cmts}</span></button>
       <button class="save" data-a="saveSheet" data-id="${r.id}" aria-pressed="${saved}" aria-label="Save"><span class="ic">${I.mark}</span><span>${fmtK(1200)}</span></button>
       <button data-a="shareSheet" data-id="${r.id}" aria-label="Share"><span class="ic">${I.share}</span><span>Share</span></button></div>
-    <button class="make-btn" data-a="pane" data-p="2">Make this recipe ${I.arrow}</button></div>
+    </div>
   <div class="pane info" aria-label="Recipe" data-recipe="${r.id}">${recipePane(r, s)}<button class="edge l" data-a="pane" data-p="1">Video</button></div>
   </div></article>`;
 }
@@ -484,15 +482,6 @@ const A = {
   },
   chip(el) { ui.chip = el.dataset.v; $$('#chips button').forEach(b => b.setAttribute('aria-pressed', b === el)); renderFeed(); },
   pane(el) { const p = el.closest('.pager'); p.scrollTo({ left: +el.dataset.p * p.clientWidth, behavior: 'smooth' }); },
-  toggleCaption(el) {
-    const id = el.dataset.id, minimized = !ui.captionMinimized[id];
-    ui.captionMinimized[id] = minimized;
-    const caption = el.closest('.video').querySelector('.caption');
-    caption.classList.toggle('minimized', minimized);
-    el.textContent = `${minimized ? 'Show' : 'Minimize'} caption`;
-    el.setAttribute('aria-label', `${minimized ? 'Show' : 'Minimize'} caption`);
-    el.setAttribute('aria-pressed', minimized);
-  },
   toggleCaptionOverflow(el) {
     const id = el.dataset.id, expanded = !ui.captionExpanded[id];
     ui.captionExpanded[id] = expanded;
