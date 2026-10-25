@@ -60,7 +60,13 @@ class TranscriptionStage:
             import google.generativeai as genai
 
             genai.configure(api_key=ctx.settings.gemini_api_key)
-            model = genai.GenerativeModel(ctx.settings.gemini_model)
+            # Dedicated transcription model; fall back to the structuring model
+            # when gemini_transcription_model is left blank.
+            model_name = (
+                ctx.settings.gemini_transcription_model or ctx.settings.gemini_model
+            )
+            model = genai.GenerativeModel(model_name)
+            log.info("transcription: using model %s", model_name)
 
             audio_path = ctx.storage.local_path(ctx.audio_key)
             mime = _guess_mime(audio_path)
