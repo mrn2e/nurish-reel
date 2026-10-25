@@ -171,7 +171,7 @@ button:focus-visible,input:focus-visible,[tabindex]:focus-visible{outline:3px so
 .dots i{width:6px;height:6px;border-radius:3px;background:rgba(255,255,255,.45);transition:width .2s,background .2s}
 .dots i.on{width:18px;background:#fff}
 .pane.info{background:var(--dark);color:#fff;overflow:hidden;margin-top:calc(env(safe-area-inset-top) + var(--bar) + 20px);height:calc(100% - env(safe-area-inset-top) - var(--bar) - 20px)}
-.pane-scroll{height:100%;overflow-y:auto;overscroll-behavior-x:auto;overscroll-behavior-y:contain;padding:10px 42px 28px}
+.pane-scroll{height:100%;overflow-y:auto;overscroll-behavior:auto;padding:10px 42px 28px}
 .pane.info h2{font-family:var(--display);font-weight:700;font-size:28px;letter-spacing:-.015em;line-height:1.05}
 .pane.info .sub{color:var(--sage);font-size:14px;margin-top:4px}
 .pie-wrap{display:flex;justify-content:center;margin:22px 0 14px}

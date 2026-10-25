@@ -475,19 +475,56 @@ function reelHTML(r) {
 const fmtK = n => n >= 1000 ? (n / 1000).toFixed(1).replace(/\.0$/, '') + 'k' : String(n);
 const dotsHTML = '<div class="dots"><i></i><i class="on"></i><i></i></div>';
 function feedHTML(list) { return `<div class="feed">${list.map(reelHTML).join('')}</div>${dotsHTML}`; }
+/* Only one video may play at a time, and only while its reel is on screen and showing the video pane. */
+let syncQueued = false;
+function scheduleSync() { if (syncQueued) return; syncQueued = true; requestAnimationFrame(() => { syncQueued = false; syncVideos(); }); }
+function stopVideos(root) { $$('video', root).forEach(v => { try { v.pause(); v.muted = true; v.removeAttribute('src'); v.load(); } catch (e) {} }); }
+function refreshSndButtons() {
+  $$('.snd').forEach(b => { b.innerHTML = sndHTML(); b.setAttribute('aria-label', (ui.sound ? 'Mute' : 'Unmute') + ' video'); b.setAttribute('aria-pressed', ui.sound); });
+}
+function syncVideos() {
+  const viewer = $('#viewer'), root = !viewer.hidden ? viewer : ($('#phone').dataset.tab === 'discover' ? $('#screen-discover') : null);
+  let target = null;
+  const feed = root && $('.feed', root);
+  if (feed && !document.hidden) {
+    const fr = feed.getBoundingClientRect(); let best = null, bestOv = 0;
+    $$('.reel', root).forEach(reel => {
+      const b = reel.getBoundingClientRect(), ov = Math.max(0, Math.min(b.bottom, fr.bottom) - Math.max(b.top, fr.top));
+      if (ov > bestOv) { bestOv = ov; best = reel; }
+      // a reel that has fully left the screen goes back to its video pane, so scrolling on always lands on the main video
+      const p = $('.pager', reel); if (ov <= 1 && p && p.clientWidth && Math.abs(p.scrollLeft - p.clientWidth) > 1) p.scrollLeft = p.clientWidth;
+    });
+    if (best && bestOv >= fr.height * .55) {
+      const p = $('.pager', best);
+      if (p && Math.round(p.scrollLeft / (p.clientWidth || 1)) === 1) target = $('video', best);
+    }
+  }
+  $$('video').forEach(v => {
+    const on = v === target;
+    if (!on) delete v.dataset.userPaused;
+    v.muted = !(on && ui.sound);
+    if (on) {
+      if (v.paused && !v.dataset.userPaused) {
+        const p = v.play();
+        if (p && p.catch) p.catch(() => { if (ui.sound) { ui.sound = false; v.muted = true; refreshSndButtons(); v.play().catch(() => {}); } });
+      }
+    } else if (!v.paused) v.pause();
+  });
+}
+document.addEventListener('visibilitychange', syncVideos);
 function mountFeed(root) {
-  const pagers = $$('.pager', root);
-  $$('video', root).forEach(v => { v.muted = !ui.sound; });
+  const pagers = $$('.pager', root), feed = $('.feed', root);
+  $$('video', root).forEach(v => { v.muted = true; });
   pagers.forEach(p => { p.scrollLeft = p.clientWidth; p.addEventListener('scroll', () => {
-    const i = Math.round(p.scrollLeft / p.clientWidth); $$('.dots i', root).forEach((d, k) => d.classList.toggle('on', k === i));
-    const v = $('video', p); if (v) { if (i === 1) v.play().catch(() => {}); else v.pause(); }
+    const i = Math.round(p.scrollLeft / (p.clientWidth || 1)); $$('.dots i', root).forEach((d, k) => d.classList.toggle('on', k === i));
+    scheduleSync();
   }, { passive: true }); });
-  const feed = $('.feed', root);
   if (feed) {
-    feed.addEventListener('scroll', () => { $$('.dots i', root).forEach((d, k) => d.classList.toggle('on', k === 1)); }, { passive: true });
-    const io = new IntersectionObserver(es => es.forEach(e => { const v = $('video', e.target); if (!v) return; if (e.isIntersecting) v.play().catch(() => {}); else v.pause(); }), { root: feed, threshold: .6 });
+    feed.addEventListener('scroll', () => { $$('.dots i', root).forEach((d, k) => d.classList.toggle('on', k === 1)); scheduleSync(); }, { passive: true });
+    const io = new IntersectionObserver(scheduleSync, { root: feed, threshold: [0, .25, .5, .6, .75, 1] });
     $$('.reel', root).forEach(r => io.observe(r));
   }
+  scheduleSync(); setTimeout(syncVideos, 150); setTimeout(syncVideos, 600);
 }
 const PROTEIN_RULES = [['chicken', /\b(chicken|turkey)/], ['beef', /\b(beef|ribeye|steak|brisket)/], ['pork', /\b(pork|bacon|sausage)|\bham\b/], ['seafood', /\b(fish|salmon|shrimp|tuna|cod|crab|prawn)/]];
 const proteinTags = r => {
@@ -597,6 +634,7 @@ function renderDiscover(force) {
 }
 function renderFeed() {
   const host = $('#feedhost'), list = filtered();
+  stopVideos(host);
   host.style.height = '100%';
   host.innerHTML = list.length ? feedHTML(list) : `<div class="empty" style="color:#9DB98C;padding-top:200px"><b style="color:#fff">No videos match</b>${myDietOn() ? `Your profile diet (${esc(profileDiets().join(', '))}) is hiding some recipes.<br>` : ''}Try loosening a filter.${activeFilterCount() || ui.filter.trim() ? `<button class="big-btn alt" data-a="resetFilters" style="display:block;width:auto;margin:18px auto 0;padding:13px 22px">Clear filters</button>` : ''}${myDietOn() ? `<button class="ghost-btn" data-a="toggleMyDiet" style="display:block;width:auto;margin:10px auto 0;padding:12px 20px;color:#fff;border-color:rgba(255,255,255,.4)">Turn off my diet filter</button>` : ''}</div>`;
   if (list.length) mountFeed(host);
@@ -617,6 +655,7 @@ function renderCookbooks() {
 }
 function openViewer(title, ids, startId) {
   const list = ids.map(byId).filter(Boolean), v = $('#viewer');
+  stopVideos(v);
   v.hidden = false; $('#phone').classList.add('viewing');
   v.innerHTML = list.length ? `<button class="back-fab" data-a="closeViewer" aria-label="Back">${I.back}</button>${title ? `<div class="viewer-title">${esc(title)}</div>` : ''}${feedHTML(list)}`
     : `<button class="back-fab" data-a="closeViewer" aria-label="Back">${I.back}</button><div class="viewer-title">${esc(title)}</div><div class="empty" style="color:#9DB98C;padding-top:240px"><b style="color:#fff">Empty for now</b>Save recipes from Discover and they land here.</div>`;
@@ -801,7 +840,7 @@ const A = {
     toast('Following @' + r.creator);
   },
   cart: el => { addToCart(el.dataset.id); },
-  vid: el => { el.paused ? el.play() : el.pause(); },
+  vid: el => { if (el.paused) { delete el.dataset.userPaused; el.play().catch(() => {}); } else { el.dataset.userPaused = '1'; el.pause(); } },
   comments(el) {
     const id = el.dataset.id, list = S.comments[id] || [];
     openSheet(`<h3>Comments</h3><div id="cm">${list.map(([n, t]) => `<div class="cmt"><b>${esc(n)}</b>${esc(t)}</div>`).join('') || '<p class="cmt" style="color:var(--mute)">Be the first to comment.</p>'}</div>
@@ -854,13 +893,10 @@ const A = {
   },
   openColl(el) { const c = S.collections.find(x => x.id === el.dataset.id); openViewer(c.name, c.ids); },
   openPost(el) { const ids = el.dataset.from ? [...new Set([...S.liked, ...S.reposts])] : S.uploaded.map(r => r.id); openViewer(el.dataset.from ? 'Liked' : 'My videos', ids, el.dataset.id); },
-  closeViewer() { $('#viewer').hidden = true; $('#viewer').innerHTML = ''; $('#phone').classList.remove('viewing'); },
+  closeViewer() { stopVideos($('#viewer')); $('#viewer').hidden = true; $('#viewer').innerHTML = ''; $('#phone').classList.remove('viewing'); scheduleSync(); },
   closeSheet,
-  sound(el) {
-    ui.sound = !ui.sound;
-    $$('video').forEach(v => { v.muted = !ui.sound; });
-    $$('.snd').forEach(b => { b.innerHTML = sndHTML(); b.setAttribute('aria-label', (ui.sound ? 'Mute' : 'Unmute') + ' video'); b.setAttribute('aria-pressed', ui.sound); });
-    const v = el.closest('.pane') && $('video', el.closest('.pane')); if (v) v.play().catch(() => {});
+  sound() {
+    ui.sound = !ui.sound; refreshSndButtons(); syncVideos();
   },
   toggleTheme(el) {
     S.theme = currentTheme() === 'dark' ? 'light' : 'dark'; save(); applyTheme();
@@ -1018,7 +1054,7 @@ function showTab(t) {
   if (t === 'pantry') ui.pantryTab = 'pantry';
   R[t]();
   if (t === 'discover') $$('#screen-discover .pager').forEach(p => { p.scrollLeft = p.clientWidth; });
-  $$('#screen-discover video').forEach(v => { if (t !== 'discover') v.pause(); });
+  syncVideos(); scheduleSync();
 }
 function showVideoNote(pane, text) {
   if (!pane || $('.vid-note', pane)) return;
