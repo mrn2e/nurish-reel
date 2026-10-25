@@ -11,15 +11,15 @@ const DAY = 864e5;
 const now = Date.now();
 const fresh = () => ({
   uploaded: [],
-  cart: [{ id: 'katsudon', s: 2 }, { id: 'veggiesoup', s: 4 }],
+  cart: [{ id: 'beef-pasta', s: 4 }, { id: 'coconut-chicken', s: 3 }],
   made: [
-    { id: 'katsudon', s: 2, left: 1, at: now - DAY, rating: null },
-    { id: 'meatballs', s: 4, left: 3, at: now - 2 * DAY, rating: 3 }
+    { id: 'coconut-chicken', s: 3, left: 1, at: now - DAY, rating: null },
+    { id: 'garlic-soy-chicken', s: 3, left: 2, at: now - 2 * DAY, rating: 3 }
   ],
-  checked: {}, liked: ['katsudon'], following: ['mika.cooks'],
+  checked: {}, liked: ['soy-garlic-ramen'], following: ['nurish.kitchen'],
   collections: SEED_COLLECTIONS.map(c => ({ ...c, ids: [...c.ids] })),
   comments: JSON.parse(JSON.stringify(SEED_COMMENTS)),
-  goal: 2000, log: {}, history: {}, bio: '', follows: 128, followers: 342, reposts: ['bulgogi'],
+  goal: 2000, log: {}, history: {}, bio: '', follows: 128, followers: 342, reposts: ['garlic-soy-chicken'],
   purchases: [
     { id: 'p1', name: 'Spinach and tomatoes', cat: 'Produce', price: 8.40, at: weekStart() + 3.6e6 },
     { id: 'p2', name: 'Chicken thighs', cat: 'Protein', price: 9.60, at: weekStart() + 7.2e6 },
@@ -38,7 +38,7 @@ const applyTheme = () => { document.documentElement.dataset.theme = currentTheme
 applyTheme();
 if (darkQuery) darkQuery.addEventListener('change', () => { if (!S.theme) applyTheme(); });
 if (!S.log[dayKey()]) {
-  S.log[dayKey()] = { breakfast: [{ id: 'veggiesoup', s: 1 }], lunch: [{ id: 'katsudon', s: 1 }], dinner: [{ id: 'meatballs', s: 1 }], snacks: [] };
+  S.log[dayKey()] = { breakfast: [{ id: 'coconut-chicken', s: 1 }], lunch: [{ id: 'beef-pasta', s: 1 }], dinner: [{ id: 'garlic-soy-chicken', s: 1 }], snacks: [] };
 }
 if (!Object.keys(S.history).length) {
   [1840, 2210, 1950, 1620, 2060, 1790].forEach((v, i) => { S.history[dayKey(new Date(now - (6 - i) * DAY))] = v; });
