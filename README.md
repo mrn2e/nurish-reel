@@ -41,7 +41,7 @@ result when the job is `completed`.
 | # | Stage | Provider | Fallback without a key/binary |
 |---|-------|----------|-------------------------------|
 | 1 | Media extraction | `ffmpeg` (audio + keyframes) | skips; downstream stages adapt |
-| 2 | Transcription | Hosted Whisper (OpenAI) | stub transcript |
+| 2 | Transcription | Gemini (audio → text) | stub transcript |
 | 3 | OCR | Tesseract (`pytesseract`) | no-op |
 | 4 | Captions | SRT/VTT subtitle parser | skips if no track uploaded |
 | 5 | Structuring | Gemini → JSON | deterministic stub recipe |
@@ -125,8 +125,7 @@ optional; absent keys activate the stub fallbacks above.
 
 | Variable | Purpose |
 |----------|---------|
-| `OPENAI_API_KEY` | Hosted Whisper transcription |
-| `GEMINI_API_KEY` | Recipe structuring (JSON output) |
+| `GEMINI_API_KEY` | Audio transcription **and** recipe structuring (JSON output) |
 | `USDA_API_KEY` | Nutrition lookup ([sign up](https://fdc.nal.usda.gov/api-key-signup.html)) |
 | `DATABASE_URL` | SQLite (default) or Postgres |
 | `STORAGE_BACKEND` | `local` (default) or `s3` (+ `S3_*` vars; works with MinIO) |

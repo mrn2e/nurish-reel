@@ -30,11 +30,7 @@ class Settings(BaseSettings):
     aws_access_key_id: str = ""
     aws_secret_access_key: str = ""
 
-    # Transcription (hosted Whisper)
-    openai_api_key: str = ""
-    whisper_model: str = "whisper-1"
-
-    # LLM structuring (Gemini)
+    # Transcription + LLM structuring (both use Gemini)
     gemini_api_key: str = ""
     gemini_model: str = "gemini-1.5-flash"
 

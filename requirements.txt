@@ -11,10 +11,7 @@ SQLAlchemy==2.0.36
 # HTTP client (USDA, Gemini REST fallback, etc.)
 httpx==0.28.1
 
-# Transcription (hosted Whisper via OpenAI)
-openai==1.57.4
-
-# LLM structuring (Gemini)
+# Transcription + LLM structuring (both use Gemini)
 google-generativeai==0.8.3
 
 # OCR
