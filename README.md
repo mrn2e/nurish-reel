@@ -126,7 +126,8 @@ optional; absent keys activate the stub fallbacks above.
 | Variable | Purpose |
 |----------|---------|
 | `GEMINI_API_KEY` | Audio transcription **and** recipe structuring (JSON output) |
-| `GEMINI_MODEL` | Gemini model name (default `gemini-flash-latest`; pinned `gemini-1.5-*` names are retired and 404) |
+| `GEMINI_MODEL` | Structuring model, text→recipe JSON (default `gemini-flash-latest`; pinned `gemini-1.5-*` are retired and 404) |
+| `GEMINI_TRANSCRIPTION_MODEL` | Transcription model, audio→text (default `gemini-3.5-transcribe`; blank reuses `GEMINI_MODEL`) |
 | `USDA_API_KEY` | Nutrition lookup ([sign up](https://fdc.nal.usda.gov/api-key-signup.html)) |
 | `CORS_ORIGINS` | Comma-separated frontend origins allowed in prod (ignored in dev) |
 | `DATABASE_URL` | SQLite (default) or Postgres |

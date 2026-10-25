@@ -35,14 +35,23 @@ class Settings(BaseSettings):
     aws_access_key_id: str = ""
     aws_secret_access_key: str = ""
 
-    # Transcription + LLM structuring (both use Gemini).
-    # Use the floating "-latest" alias so the model keeps resolving to a current
-    # model. Pinned names get retired (gemini-1.5-*) or blocked for new accounts
-    # (gemini-2.5-flash -> "no longer available to new users"), both of which
-    # 404; the alias dodges that. Override via GEMINI_MODEL if a key needs a
-    # specific pinned model (e.g. gemini-3.8-flash).
+    # Transcription + LLM structuring (both use Gemini, one key).
+    #
+    # Two separate model settings so each call uses the right model and draws
+    # from its own per-model quota:
+    #   - gemini_transcription_model: audio -> text (Stage 2). Defaults to the
+    #     dedicated ASR model gemini-3.5-transcribe.
+    #   - gemini_model: structure text -> recipe JSON (Stage 5). A general Flash
+    #     model. Use a floating "-latest" alias so it keeps resolving to a
+    #     current model — pinned names get retired (gemini-1.5-*) or blocked for
+    #     new accounts (gemini-2.5-flash -> "no longer available to new users"),
+    #     both of which 404. Override via GEMINI_MODEL for a specific pin.
+    #
+    # If gemini_transcription_model is blank, transcription falls back to
+    # gemini_model, so a single GEMINI_MODEL still works.
     gemini_api_key: str = ""
     gemini_model: str = "gemini-flash-latest"
+    gemini_transcription_model: str = "gemini-3.5-transcribe"
 
     # Nutrition (USDA FoodData Central)
     usda_api_key: str = ""
