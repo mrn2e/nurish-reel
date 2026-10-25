@@ -27,7 +27,7 @@ const fresh = () => ({
     { id: 'p4', name: 'Pasta', cat: 'Grains', price: 2.01, at: weekStart() + 1.44e7 }
   ],
   extras: [],
-  theme: null, prefs: { diets: [], allergies: [], budget: '$60 / week', nutrition: '2,000 kcal goal', equipment: 'Stovetop, oven, blender' }
+  theme: null, prefs: { diets: [], allergies: [], budget: '$60 / week' }
 });
 let S = fresh();
 try { const raw = localStorage.getItem(KEY); if (raw) S = { ...fresh(), ...JSON.parse(raw) }; } catch (e) {}
@@ -49,7 +49,7 @@ const save = () => {
     localStorage.setItem(KEY, JSON.stringify(copy));
   } catch (e) {}
 };
-const ui = { fl: { proteins: [], maxPrice: 0, maxTime: 0 }, pantryTab: 'pantry', nutTab: 'daily', profTab: 'posts', filter: '', chip: 'all', reelServ: {}, captionExpanded: {}, sound: false, up: null };
+const ui = { fl: { proteins: [], diets: [], maxPrice: 0, maxTime: 0, ignoreDiet: false }, pantryTab: 'pantry', nutTab: 'daily', profTab: 'posts', filter: '', reelServ: {}, captionExpanded: {}, sound: false, up: null };
 
 const allRecipes = () => [...S.uploaded, ...SEED_RECIPES];
 const byId = id => allRecipes().find(r => r.id === id);
@@ -152,6 +152,7 @@ async function restoreVideos() {
   }));
 }
 const I = {
+  pencil: '<svg viewBox="0 0 24 24"><path d="M4 20h4L19 9a2.800 2.800 0 0 0-4-4L4 16z"/><path d="M13.500 6.500l4 4"/></svg>',
   sound: '<svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16.5 8.500a5 5 0 0 1 0 7M19 6a8.500 8.500 0 0 1 0 12"/></svg>',
   mute: '<svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M17 9l5 6M22 9l-5 6"/></svg>',
   trash: '<svg viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>',
@@ -214,9 +215,9 @@ function renderAppbar(tab) {
   const host = $('#appbar-actions');
   const map = {
     pantry: '',
-    nutrition: `<button class="round" data-a="nutSearch" aria-label="Search">${I.search}</button>`,
-    discover: `<button class="round" data-a="nutSearch" aria-label="Search">${I.search}</button><button class="round" data-a="filters" aria-label="Filter videos${activeFilterCount() ? ', ' + activeFilterCount() + ' active' : ''}">${I.slider}${activeFilterCount() ? `<span class="fbadge">${activeFilterCount()}</span>` : ''}</button>`,
-    cookbooks: `<button class="round" data-a="nutSearch" aria-label="Search">${I.search}</button>`,
+    nutrition: `<button class="round" data-a="search" data-scope="nutrition" aria-label="Search recipes to log">${I.search}</button>`,
+    discover: `<button class="round" data-a="search" data-scope="discover" aria-label="Search videos${ui.filter.trim() ? ', search active' : ''}">${I.search}${ui.filter.trim() ? '<span class="sdot"></span>' : ''}</button><button class="round" data-a="filters" aria-label="Filter videos${activeFilterCount() ? ', ' + activeFilterCount() + ' active' : ''}">${I.slider}${activeFilterCount() ? `<span class="fbadge">${activeFilterCount()}</span>` : ''}</button>`,
+    cookbooks: `<button class="round" data-a="search" data-scope="cookbooks" aria-label="Search cookbooks">${I.search}</button>`,
     profile: ''
   };
   host.innerHTML = map[tab] || '';
@@ -306,7 +307,7 @@ function renderPantry() {
 function pantryHTML() {
   // pantry stats are illustrative, derived once
   const items = 24, soon = Math.min(3, S.cart.length + 1), low = 5;
-  const picks = allRecipes().slice().sort((a, b) => matchPct(b) - matchPct(a)).slice(0, 4);
+  const picks = allRecipes().filter(dietOk).sort((a, b) => matchPct(b) - matchPct(a)).slice(0, 4);
   const recent = S.made.slice().sort((a, b) => b.at - a.at).slice(0, 4);
   return `
   <div class="page-head"><span class="eyebrow">Your kitchen</span><h1 class="page-title">My Pantry</h1><p class="page-sub">Everything you have, all in one place.</p></div>
@@ -488,35 +489,101 @@ function mountFeed(root) {
     $$('.reel', root).forEach(r => io.observe(r));
   }
 }
-const PROTEIN_RULES = [['chicken', /chicken|turkey/], ['beef', /beef|ribeye|steak|brisket/], ['pork', /pork|bacon|ham\b|sausage/], ['seafood', /fish|salmon|shrimp|tuna|cod\b|crab|prawn/]];
+const PROTEIN_RULES = [['chicken', /\b(chicken|turkey)/], ['beef', /\b(beef|ribeye|steak|brisket)/], ['pork', /\b(pork|bacon|sausage)|\bham\b/], ['seafood', /\b(fish|salmon|shrimp|tuna|cod|crab|prawn)/]];
 const proteinTags = r => {
   const hay = [r.title, ...r.ingredients.map(i => i.name)].join(' ').toLowerCase();
-  const found = PROTEIN_RULES.filter(([, re]) => re.test(hay)).map(([k]) => k);
-  return found.length ? found : ['vegetarian'];
+  return PROTEIN_RULES.filter(([, re]) => re.test(hay)).map(([k]) => k);
 };
-const FILTER_PROTEINS = [['chicken', 'Chicken'], ['beef', 'Beef'], ['pork', 'Pork'], ['seafood', 'Seafood'], ['vegetarian', 'Vegetarian']];
+/* Diet rules read the ingredient list. Plant milks, nut butters and similar are removed first so they don't count as dairy. */
+const MEAT_RE = /\b(chicken|turkey|beef|ribeye|steak|brisket|pork|bacon|sausage|lamb|veal|duck|meatball|gelatin)|\b(ham|lard)\b/;
+const FISH_RE = /\b(fish|salmon|shrimp|tuna|cod|crab|prawn|anchov|sardine|mackerel|squid|clam|mussel|oyster|bonito|dashi)|\bscallops?\b/;
+const ANIMAL_RE = /\b(egg|milk|cheese|parmesan|mozzarella|butter|cream|yogurt|yoghurt|honey|ghee|whey|mayo|mayonnaise)/;
+const plantOnly = n => n.toLowerCase().replace(/\b(coconut|oat|almond|soy|rice|cashew|nut|peanut|cocoa|shea|plant)[ -]?(milk|cream|butter|yogurt|cheese)/g, '');
+function dietsOf(r) {
+  const text = [r.title, ...r.ingredients.map(i => i.name)].map(plantOnly).join(' | ');
+  const meat = MEAT_RE.test(text), fish = FISH_RE.test(text), animal = ANIMAL_RE.test(text), out = [];
+  if (!meat) out.push('Pescatarian');
+  if (!meat && !fish) out.push('Vegetarian');
+  if (!meat && !fish && !animal) out.push('Vegan');
+  return out;
+}
+const followsDiets = (r, diets) => diets.every(d => dietsOf(r).includes(d));
+const profileDiets = () => preferenceSelections('diets');
+const myDietOn = () => profileDiets().length > 0 && !ui.fl.ignoreDiet;
+/* The profile diet is a universal default filter. Your own uploads are exempt so a new post never vanishes. */
+const dietOk = r => !myDietOn() || S.uploaded.some(x => x.id === r.id) || followsDiets(r, profileDiets());
+const FILTER_PROTEINS = [['chicken', 'Chicken'], ['beef', 'Beef'], ['pork', 'Pork'], ['seafood', 'Seafood']];
 const FILTER_PRICES = [[0, 'Any'], [3, 'Under $3'], [4, 'Under $4'], [5, 'Under $5']];
 const FILTER_TIMES = [[0, 'Any'], [20, 'Up to 20 min'], [25, 'Up to 25 min'], [30, 'Up to 30 min']];
-const activeFilterCount = () => ui.fl.proteins.length + (ui.fl.maxPrice ? 1 : 0) + (ui.fl.maxTime ? 1 : 0);
+const activeFilterCount = () => ui.fl.proteins.length + ui.fl.diets.length + (ui.fl.maxPrice ? 1 : 0) + (ui.fl.maxTime ? 1 : 0);
+const searchHay = r => [r.title, r.creator, ...(r.tags || []), ...r.ingredients.map(i => i.name)].join(' ').toLowerCase();
+const matchesQuery = (r, q) => q.trim().toLowerCase().split(/\s+/).filter(Boolean).every(t => searchHay(r).includes(t));
 function filtered() {
-  const q = ui.filter.trim().toLowerCase(), chip = ui.chip, f = ui.fl;
-  return allRecipes().filter(r => {
-    const hay = [r.title, ...(r.tags || []), ...r.ingredients.map(i => i.name)].join(' ').toLowerCase();
-    return (chip === 'all' || hay.includes(chip)) && (!q || hay.includes(q))
-      && (!f.proteins.length || f.proteins.some(p => proteinTags(r).includes(p)))
-      && (!f.maxPrice || parseFloat(priceOf(r)) <= f.maxPrice)
-      && (!f.maxTime || cookMin(r) <= f.maxTime);
-  });
+  const f = ui.fl;
+  return allRecipes().filter(r => matchesQuery(r, ui.filter) && dietOk(r)
+    && (!f.proteins.length || f.proteins.some(p => proteinTags(r).includes(p)))
+    && (!f.diets.length || followsDiets(r, f.diets))
+    && (!f.maxPrice || parseFloat(priceOf(r)) <= f.maxPrice)
+    && (!f.maxTime || cookMin(r) <= f.maxTime));
 }
 function filterSheetHTML() {
-  const f = ui.fl, n = filtered().length;
+  const f = ui.fl, n = filtered().length, mine = profileDiets();
   const chips = (list, isOn, act) => list.map(([v, lab]) => `<button class="fchip" data-a="${act}" data-v="${v}" aria-pressed="${isOn(v)}">${lab}</button>`).join('');
-  return `<h3>Filter videos</h3>
+  const myDiet = mine.length
+    ? `<button class="pref-switch" role="switch" aria-checked="${!f.ignoreDiet}" data-a="toggleMyDiet"><span>Apply my profile diet<small class="ps-sublabel">${esc(mine.join(', '))}</small></span><span class="switch" aria-hidden="true"></span></button>`
+    : `<p class="sheet-note">Pick a diet in Profile, then Preferences, and it will filter your feed automatically.</p>`;
+  return `<h3>Filter videos</h3>${myDiet}
+    <div class="f-group"><h4>Diet</h4><div class="fchips">${chips(DIET_OPTIONS.map(d => [d, d]), v => f.diets.includes(v), 'fDiet')}</div></div>
     <div class="f-group"><h4>Protein</h4><div class="fchips">${chips(FILTER_PROTEINS, v => f.proteins.includes(v), 'fProtein')}</div></div>
     <div class="f-group"><h4>Cost per serving</h4><div class="fchips">${chips(FILTER_PRICES, v => f.maxPrice === +v, 'fPrice')}</div></div>
     <div class="f-group"><h4>Time to cook</h4><div class="fchips">${chips(FILTER_TIMES, v => f.maxTime === +v, 'fTime')}</div></div>
     <div class="row2" style="margin-top:20px"><button class="ghost-btn" data-a="resetFilters" style="margin:0;flex:1" ${activeFilterCount() ? '' : 'disabled style="margin:0;flex:1;opacity:.45"'}>Reset</button>
     <button class="big-btn" data-a="closeSheet" style="flex:2;margin:0">${n ? `Show ${n} ${n === 1 ? 'video' : 'videos'}` : 'No matches'}</button></div>`;
+}
+const SEARCH_COPY = {
+  discover: ['Search videos', 'Search recipes, ingredients or creators'],
+  nutrition: ['Find a meal to log', 'Search recipes'],
+  cookbooks: ['Search your cookbooks', 'Search cookbooks or saved recipes']
+};
+function openSearch(scope) {
+  const [title, ph] = SEARCH_COPY[scope], start = scope === 'discover' ? ui.filter : '';
+  openSheet(`<h3>${title}</h3><div class="sbar">${I.search}<input type="search" id="sq" placeholder="${ph}" value="${esc(start)}" autocomplete="off" aria-label="${ph}"><button class="sclear" data-a="clearSearch" aria-label="Clear search">&times;</button></div><div id="sres" aria-live="polite"></div>`,
+    b => { const q = $('#sq', b); q.addEventListener('input', () => runSearch(scope, q.value)); runSearch(scope, q.value); q.focus(); });
+}
+function recipeRow(r, act, extra = '') {
+  return `<button class="opt" data-a="${act}" data-id="${r.id}" ${extra}><div class="thumb">${poster(r, true)}</div><div class="o-t">${esc(r.title)}<small>${cookMin(r)} min · $${priceOf(r)} / serving${r.creator ? ' · @' + esc(r.creator) : ''}</small></div></button>`;
+}
+function runSearch(scope, raw) {
+  const q = raw.trim(), host = $('#sres'); if (!host) return;
+  const clear = $('.sclear'); if (clear) clear.style.visibility = raw ? 'visible' : 'hidden';
+  if (scope === 'discover') {
+    ui.filter = raw; renderAppbar('discover'); renderFeed();
+    const list = filtered();
+    host.innerHTML = !q ? `<p class="sheet-note">Type to filter the feed. Your diet and filters still apply.</p>`
+      : list.length ? `${list.slice(0, 6).map(r => recipeRow(r, 'searchOpen')).join('')}<button class="big-btn" data-a="closeSheet" style="width:100%;margin:14px 0 0">Show ${list.length} ${list.length === 1 ? 'video' : 'videos'} in feed</button>`
+      : `<p class="sheet-note">Nothing matches "${esc(q)}".${myDietOn() ? ' Your profile diet may be hiding some results.' : ''}</p>`;
+  } else if (scope === 'nutrition') {
+    const meal = guessMeal(), made = new Set(S.made.map(m => m.id));
+    const list = allRecipes().filter(r => matchesQuery(r, q)).sort((a, b) => (made.has(b.id) - made.has(a.id))).slice(0, 8);
+    host.innerHTML = list.length ? `<p class="sheet-note">Tap a meal to log one serving to ${meal}.</p>${list.map(r => recipeRow(r, 'logPick', `data-meal="${meal}"`).replace('</small>', ` · ${Math.round(per(r).calories)} kcal</small>`)).join('')}` : `<p class="sheet-note">Nothing matches "${esc(q)}".</p>`;
+  } else {
+    const ql = q.toLowerCase(), colls = S.collections.filter(c => !q || c.name.toLowerCase().includes(ql));
+    const hits = q ? allRecipes().filter(r => matchesQuery(r, q)).map(r => [r, S.collections.find(c => c.ids.includes(r.id))]).filter(([, c]) => c) : [];
+    host.innerHTML = (colls.length ? `<h4 class="s-head">Cookbooks</h4>${colls.map(c => `<button class="opt" data-a="searchColl" data-id="${c.id}"><div class="o-t">${esc(c.name)}<small>${c.ids.length} ${c.ids.length === 1 ? 'recipe' : 'recipes'}</small></div></button>`).join('')}` : '')
+      + (hits.length ? `<h4 class="s-head">Saved recipes</h4>${hits.slice(0, 8).map(([r, c]) => `<button class="opt" data-a="searchColl" data-id="${c.id}" data-rid="${r.id}"><div class="thumb">${poster(r, true)}</div><div class="o-t">${esc(r.title)}<small>In ${esc(c.name)}</small></div></button>`).join('')}` : '')
+      || `<p class="sheet-note">Nothing matches "${esc(q)}".</p>`;
+  }
+}
+function openEditColl(id, draft) {
+  const c = S.collections.find(x => x.id === id); if (!c) return;
+  const rows = c.ids.map(byId).filter(Boolean).map(r => `<div class="ec-row"><div class="thumb">${poster(r, true)}</div><span>${esc(r.title)}</span><button class="si-x" data-a="collRemove" data-id="${c.id}" data-rid="${r.id}" aria-label="Remove ${esc(r.title)} from ${esc(c.name)}">&times;</button></div>`).join('');
+  openSheet(`<h3>Edit cookbook</h3><label class="name-field" style="margin-top:0">Name<input type="text" id="ec-name" maxlength="24" value="${esc(draft ?? c.name)}" aria-label="Cookbook name"></label>
+    <div class="f-group"><h4>Recipes (${c.ids.length})</h4>${rows || '<p class="sheet-note">No recipes yet. Save recipes from Discover to fill this cookbook.</p>'}</div>
+    <button class="big-btn" data-a="saveColl" data-id="${c.id}" style="width:100%;margin:14px 0 0">Save changes</button>
+    <button class="ghost-btn" data-a="askDeleteColl" data-id="${c.id}" style="color:var(--coral-ink);border-color:var(--coral)">Delete cookbook</button>`);
+}
+function syncSaveIcons() {
+  $$('.rail .save').forEach(b => b.setAttribute('aria-pressed', S.collections.some(c => c.ids.includes(b.dataset.id))));
 }
 function applyFilters() {
   if ($('#sheet') && !$('#sheet').hidden && $('.f-group', $('#sheet-body'))) $('#sheet-body').innerHTML = filterSheetHTML();
@@ -531,7 +598,7 @@ function renderDiscover(force) {
 function renderFeed() {
   const host = $('#feedhost'), list = filtered();
   host.style.height = '100%';
-  host.innerHTML = list.length ? feedHTML(list) : `<div class="empty" style="color:#9DB98C;padding-top:220px"><b style="color:#fff">No videos match</b>Try loosening a filter.${activeFilterCount() ? `<button class="big-btn alt" data-a="resetFilters" style="display:block;width:auto;margin:18px auto 0;padding:13px 22px">Clear filters</button>` : ''}</div>`;
+  host.innerHTML = list.length ? feedHTML(list) : `<div class="empty" style="color:#9DB98C;padding-top:200px"><b style="color:#fff">No videos match</b>${myDietOn() ? `Your profile diet (${esc(profileDiets().join(', '))}) is hiding some recipes.<br>` : ''}Try loosening a filter.${activeFilterCount() || ui.filter.trim() ? `<button class="big-btn alt" data-a="resetFilters" style="display:block;width:auto;margin:18px auto 0;padding:13px 22px">Clear filters</button>` : ''}${myDietOn() ? `<button class="ghost-btn" data-a="toggleMyDiet" style="display:block;width:auto;margin:10px auto 0;padding:12px 20px;color:#fff;border-color:rgba(255,255,255,.4)">Turn off my diet filter</button>` : ''}</div>`;
   if (list.length) mountFeed(host);
 }
 function openRecipe(id) { openViewer('', [id], id); }
@@ -543,9 +610,10 @@ function renderCookbooks() {
   const featR = feat && byId(feat.ids[0]);
   el.innerHTML = `
   <div class="page-head"><span class="eyebrow">Your collections</span><h1 class="page-title">My Cookbooks</h1><p class="page-sub">Recipes worth coming back to.</p></div>
-  ${feat ? `<button class="featured" data-a="openColl" data-id="${feat.id}">${featR ? poster(featR, true) : ''}<div class="f-body"><span class="eyebrow">Featured collection</span><h3>${esc(feat.name)}</h3><small>${feat.ids.length} ${feat.ids.length === 1 ? 'recipe' : 'recipes'}</small></div></button>` : ''}
+  ${feat ? `<div class="feat-wrap"><button class="featured" data-a="openColl" data-id="${feat.id}">${featR ? poster(featR, true) : ''}<div class="f-body"><span class="eyebrow">Featured collection</span><h3>${esc(feat.name)}</h3><small>${feat.ids.length} ${feat.ids.length === 1 ? 'recipe' : 'recipes'}</small></div></button><button class="tile-menu" data-a="editColl" data-id="${feat.id}" aria-label="Edit ${esc(feat.name)}">${I.pencil}</button></div>` : ''}
   <div class="section-row"><h2 class="section-title">Your collections</h2><button class="link" data-a="newColl">+ Create</button></div>
-  <div class="grid2">${S.collections.map(c => { const r = byId(c.ids[0]); return `<button class="tile ${r ? '' : 'empty-t'}" data-a="openColl" data-id="${c.id}"><div class="t-media">${r ? poster(r, true) : ''}</div><b>${esc(c.name)}</b><small>${c.ids.length} ${c.ids.length === 1 ? 'recipe' : 'recipes'}</small></button>`; }).join('')}</div>`;
+  ${S.collections.length ? '' : `<div class="soft-empty">No cookbooks yet. Tap + Create to start one, or save a recipe from Discover.</div>`}
+  <div class="grid2">${S.collections.map(c => { const r = byId(c.ids[0]); return `<div class="tile-wrap"><button class="tile ${r ? '' : 'empty-t'}" data-a="openColl" data-id="${c.id}"><div class="t-media">${r ? poster(r, true) : ''}</div><b>${esc(c.name)}</b><small>${c.ids.length} ${c.ids.length === 1 ? 'recipe' : 'recipes'}</small></button><button class="tile-menu" data-a="editColl" data-id="${c.id}" aria-label="Edit ${esc(c.name)}">${I.pencil}</button></div>`; }).join('')}</div>`;
 }
 function openViewer(title, ids, startId) {
   const list = ids.map(byId).filter(Boolean), v = $('#viewer');
@@ -556,7 +624,7 @@ function openViewer(title, ids, startId) {
 }
 
 /* ---------- profile ---------- */
-const PREFS = [['budget', 'Grocery budget'], ['nutrition', 'Nutrition goals'], ['equipment', 'Kitchen equipment']];
+const PREFS = [['budget', 'Grocery budget']];
 const DIET_OPTIONS = ['Vegan', 'Vegetarian', 'Pescatarian'];
 const ALLERGY_OPTIONS = Object.keys(ALLERGEN_TERMS);
 function preferenceSelections(key) {
@@ -711,7 +779,6 @@ const A = {
       $$(`[data-recipe="${id}"] .pane-scroll`).forEach(p => { const sc = p.scrollTop; p.innerHTML = recipePane(r, s); p.scrollTop = sc; });
     }
   },
-  chip(el) { ui.chip = el.dataset.v; $$('#chips button').forEach(b => b.setAttribute('aria-pressed', b === el)); renderFeed(); },
   pane(el) { const p = el.closest('.pager'); p.scrollTo({ left: +el.dataset.p * p.clientWidth, behavior: 'smooth' }); },
   toggleCaptionOverflow(el) {
     const id = el.dataset.id, expanded = !ui.captionExpanded[id];
@@ -752,17 +819,39 @@ const A = {
   copyShare() { const v = $('#sh'); v.select(); try { document.execCommand('copy'); } catch (e) {} closeSheet(); toast('Link copied'); },
   saveSheet(el) {
     const id = el.dataset.id;
-    openSheet(`<h3>Save to</h3>${S.collections.map(c => `<button class="opt" data-a="toggleColl" data-id="${id}" data-c="${c.id}"><div class="o-t">${esc(c.name)}<small>${c.ids.length} recipes</small></div><span class="tick ${c.ids.includes(id) ? 'on' : ''}"></span></button>`).join('')}<button class="big-btn" data-a="closeSheet" style="margin:16px 0 0">Done</button>`);
+    openSheet(`<h3>Save to</h3>${S.collections.map(c => `<button class="opt" data-a="toggleColl" data-id="${id}" data-c="${c.id}"><div class="o-t">${esc(c.name)}<small>${c.ids.length} recipes</small></div><span class="tick ${c.ids.includes(id) ? 'on' : ''}"></span></button>`).join('')}<button class="opt" data-a="newColl" data-rid="${id}"><div class="o-t" style="color:var(--coral-ink)">+ New cookbook</div></button><button class="big-btn" data-a="closeSheet" style="margin:16px 0 0">Done</button>`);
   },
   toggleColl(el) {
     const c = S.collections.find(x => x.id === el.dataset.c), id = el.dataset.id, i = c.ids.indexOf(id); i < 0 ? c.ids.push(id) : c.ids.splice(i, 1); save();
     $('.tick', el).classList.toggle('on', i < 0); $('small', el).textContent = c.ids.length + ' recipes';
     const saved = S.collections.some(x => x.ids.includes(id)); $$(`.rail .save[data-id="${id}"]`).forEach(b => b.setAttribute('aria-pressed', saved));
   },
-  newColl() {
-    openSheet(`<h3>New collection</h3><input type="text" id="nc" placeholder="Name, like Weeknight" maxlength="24" aria-label="Collection name"><button class="big-btn" data-a="makeColl" style="margin:12px 0 0">Create</button>`, b => $('#nc', b).focus());
+  newColl(el) {
+    const rid = (el && el.dataset && el.dataset.rid) || '';
+    openSheet(`<h3>New cookbook</h3><input type="text" id="nc" placeholder="Name, like Weeknight" maxlength="24" aria-label="Cookbook name"><button class="big-btn" data-a="makeColl" data-rid="${esc(rid)}" style="margin:12px 0 0">Create</button>`, b => $('#nc', b).focus());
   },
-  makeColl() { const n = $('#nc').value.trim(); if (!n) return; S.collections.push({ id: 'c' + Date.now(), name: n, ids: [] }); save(); closeSheet(); renderCookbooks(); },
+  makeColl(el) {
+    const n = $('#nc').value.trim(); if (!n) return;
+    const rid = el.dataset.rid, c = { id: 'c' + Date.now(), name: n, ids: rid ? [rid] : [] };
+    S.collections.push(c); save(); closeSheet(); renderCookbooks(); syncSaveIcons(); if (rid) toast(`Saved to ${n}`);
+  },
+  editColl(el) { openEditColl(el.dataset.id); },
+  collRemove(el) {
+    const c = S.collections.find(x => x.id === el.dataset.id), draft = ($('#ec-name') || {}).value;
+    if (!c) return; c.ids = c.ids.filter(i => i !== el.dataset.rid); save(); syncSaveIcons(); renderCookbooks(); openEditColl(c.id, draft);
+  },
+  saveColl(el) {
+    const c = S.collections.find(x => x.id === el.dataset.id), name = $('#ec-name').value.trim();
+    if (!c) return; if (!name) { $('#ec-name').focus(); return; }
+    c.name = name; save(); closeSheet(); renderCookbooks(); toast('Cookbook saved');
+  },
+  askDeleteColl(el) {
+    const c = S.collections.find(x => x.id === el.dataset.id); if (!c) return;
+    openSheet(`<h3>Delete this cookbook?</h3><p class="sheet-note">&ldquo;${esc(c.name)}&rdquo; will be removed. ${c.ids.length === 0 ? 'It has no recipes in it.' : c.ids.length === 1 ? 'The recipe in it stays in Nourish, it just won\'t be in this cookbook.' : `The ${c.ids.length} recipes in it stay in Nourish, they just won't be in this cookbook.`}</p><button class="danger-btn" data-a="confirmDeleteColl" data-id="${c.id}">Delete cookbook</button><button class="ghost-btn" data-a="closeSheet">Cancel</button>`);
+  },
+  confirmDeleteColl(el) {
+    S.collections = S.collections.filter(c => c.id !== el.dataset.id); save(); syncSaveIcons(); closeSheet(); renderCookbooks(); toast('Cookbook deleted');
+  },
   openColl(el) { const c = S.collections.find(x => x.id === el.dataset.id); openViewer(c.name, c.ids); },
   openPost(el) { const ids = el.dataset.from ? [...new Set([...S.liked, ...S.reposts])] : S.uploaded.map(r => r.id); openViewer(el.dataset.from ? 'Liked' : 'My videos', ids, el.dataset.id); },
   closeViewer() { $('#viewer').hidden = true; $('#viewer').innerHTML = ''; $('#phone').classList.remove('viewing'); },
@@ -852,12 +941,20 @@ const A = {
     const cat = $('#ai-cat [aria-pressed="true"]').dataset.c;
     S.extras.push({ id: 'x' + Date.now(), name, cat, price, checked: false }); save(); closeSheet(); renderPantry(); toast('Added to your list');
   },
-  nutSearch() { toast('Search is coming soon'); },
   filters() { openSheet(filterSheetHTML()); },
+  search(el) { openSearch(el.dataset.scope); },
+  clearSearch() { const q = $('#sq'); if (q) { q.value = ''; q.focus(); q.dispatchEvent(new Event('input')); } },
+  searchOpen(el) { closeSheet(); openRecipe(el.dataset.id); },
+  searchColl(el) {
+    const c = S.collections.find(x => x.id === el.dataset.id); if (!c) return;
+    closeSheet(); openViewer(c.name, c.ids, el.dataset.rid || undefined);
+  },
   fProtein(el) { const p = ui.fl.proteins, i = p.indexOf(el.dataset.v); i < 0 ? p.push(el.dataset.v) : p.splice(i, 1); applyFilters(); },
   fPrice(el) { const v = +el.dataset.v; ui.fl.maxPrice = ui.fl.maxPrice === v ? 0 : v; applyFilters(); },
   fTime(el) { const v = +el.dataset.v; ui.fl.maxTime = ui.fl.maxTime === v ? 0 : v; applyFilters(); },
-  resetFilters() { ui.fl = { proteins: [], maxPrice: 0, maxTime: 0 }; applyFilters(); },
+  fDiet(el) { const d = ui.fl.diets, i = d.indexOf(el.dataset.v); i < 0 ? d.push(el.dataset.v) : d.splice(i, 1); applyFilters(); },
+  toggleMyDiet() { ui.fl.ignoreDiet = !ui.fl.ignoreDiet; applyFilters(); },
+  resetFilters() { ui.fl = { ...ui.fl, proteins: [], diets: [], maxPrice: 0, maxTime: 0 }; ui.filter = ''; applyFilters(); },
   process,
   apiUrl(el, e) { e.preventDefault(); openSheet(`<h3>Backend URL</h3><input type="text" id="au" value="${esc(Api.base())}" aria-label="API base URL"><button class="big-btn" data-a="saveApi" style="margin:12px 0 0">Save</button>`); },
   saveApi() { localStorage.setItem('nurish.api', $('#au').value.trim()); closeSheet(); renderProfile(); },
@@ -877,6 +974,7 @@ document.addEventListener('change', e => {
   else if (!el.checked && index !== -1) selections.splice(index, 1);
   S.prefs[key] = selections;
   save();
+  if (key === 'diets' && reelsBuilt) renderFeed();
   const summary = $(`[data-pref-summary="${key}"]`);
   if (summary) summary.textContent = preferenceSummary(key, selections);
 });
