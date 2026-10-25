@@ -36,8 +36,11 @@ class Settings(BaseSettings):
     aws_secret_access_key: str = ""
 
     # Transcription + LLM structuring (both use Gemini).
-    # Use a floating "-latest" alias so the model keeps resolving as Google
-    # rotates versions (the pinned gemini-1.5-* names were retired and 404).
+    # Use the floating "-latest" alias so the model keeps resolving to a current
+    # model. Pinned names get retired (gemini-1.5-*) or blocked for new accounts
+    # (gemini-2.5-flash -> "no longer available to new users"), both of which
+    # 404; the alias dodges that. Override via GEMINI_MODEL if a key needs a
+    # specific pinned model (e.g. gemini-3.8-flash).
     gemini_api_key: str = ""
     gemini_model: str = "gemini-flash-latest"
 

@@ -191,9 +191,11 @@ If uploads return *"Gemini transcription was not run…"*, check in order:
    Vercel env vars are invisible to the Render backend.
 3. The backend image has `ffmpeg` (the provided `Dockerfile` installs it). No
    ffmpeg → no audio → stub, even with a valid key.
-4. If the stub message includes `(error: 404 models/... is not found)`, the
-   `GEMINI_MODEL` is retired. Use `gemini-flash-latest` (the default), or list
-   what your key supports:
+4. If the stub message includes a 404 — either `models/... is not found` (model
+   retired) or `... no longer available to new users` (model restricted for new
+   accounts) — the `GEMINI_MODEL` is unusable for this key. Prefer the floating
+   alias `gemini-flash-latest` (the default), or the exact replacement the error
+   suggests, or list what your key supports:
    ```bash
    curl -s "https://generativelanguage.googleapis.com/v1beta/models?key=YOUR_KEY" \
      | grep -o '"name": "models/[^"]*"'
