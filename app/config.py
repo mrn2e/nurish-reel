@@ -18,6 +18,11 @@ class Settings(BaseSettings):
     app_env: str = "dev"
     log_level: str = "INFO"
 
+    # CORS — comma-separated list of allowed frontend origins (prod).
+    # In dev, all origins are allowed regardless of this value.
+    # Example: "https://my-app.vercel.app,https://www.my-app.com"
+    cors_origins: str = ""
+
     # Database
     database_url: str = "sqlite:///./data/nurish.sqlite3"
 
@@ -44,6 +49,11 @@ class Settings(BaseSettings):
     @property
     def is_dev(self) -> bool:
         return self.app_env.lower() == "dev"
+
+    @property
+    def cors_origin_list(self) -> list[str]:
+        """Parsed, de-whitespaced list of allowed CORS origins."""
+        return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
 
     @property
     def auth_enabled(self) -> bool:
