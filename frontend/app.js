@@ -100,7 +100,7 @@ const rng = seed => () => (seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967
 
 /* derived, deterministic per recipe so the UI feels consistent */
 const matchPct = r => 70 + (hash(r.id) % 26);                 // 70-95% pantry match
-const cookMin = r => 15 + (hash(r.id + 'm') % 26);            // 15-40 min
+const cookMin = r => r.minutes || 15 + (hash(r.id + 'm') % 26);   // real prep+cook time when the API gave one, else 15-40 min
 const priceOf = r => (2 + (hash(r.id + 'p') % 45) / 10).toFixed(2); // $2.00-6.40
 
 /* ---------- posters (generated dish art, replaced by real video when present) ---------- */
@@ -206,8 +206,8 @@ const servedToday = id => MEALS.reduce((a, m) => a + (todayLog()[m] || []).filte
 const logNote = id => { const n = servedToday(id); return n ? `Logged today: ${n} ${n === 1 ? 'serving' : 'servings'}` : ''; };
 function addToCart(id) {
   const r = byId(id);
-  if (S.cart.find(c => c.id === id)) { toast('Already on your shopping list'); return; }
-  S.cart.push({ id, s: r.servings || 2 }); save(); toast('Added to your shopping list');
+  if (S.cart.find(c => c.id === id)) { toast('Already on your Shopping List'); return; }
+  S.cart.push({ id, s: r.servings || 2 }); save(); toast('Added to your Shopping List');
 }
 
 /* ---------- app bar actions per tab ---------- */
@@ -297,7 +297,7 @@ function pantryToggle() {
   const p = ui.pantryTab === 'pantry';
   return `<div class="seg" role="tablist" style="margin:14px 22px 0">
     <button role="tab" data-a="pantryTab" data-v="pantry" aria-pressed="${p}">Pantry</button>
-    <button role="tab" data-a="pantryTab" data-v="list" aria-pressed="${!p}">Shopping list</button></div>`;
+    <button role="tab" data-a="pantryTab" data-v="list" aria-pressed="${!p}">Shopping List</button></div>`;
 }
 function renderPantry() {
   const el = $('#screen-pantry'), sc = el.scrollTop;
@@ -319,8 +319,8 @@ function pantryHTML() {
   </div>
   <button class="cta-card" data-a="scan"><span class="cta-ic">${I.cam}</span><span class="cta-t"><b>Scan your fridge</b><small>Identify ingredients in seconds</small></span><span class="chev">${I.arrow}</span></button>
   <div class="section-row"><h2 class="section-title">Created recently</h2><button class="add-link" data-a="logMade">+ Log a meal</button></div>
-  ${recent.length ? recent.map(madeRow).join('') : `<div class="soft-empty">Nothing cooked yet. Tap "Made it" on a recipe in your shopping list, or log a meal yourself.</div>`}
-  <div class="section-row"><h2 class="section-title">Meals you can make</h2><button class="link" data-a="tab" data-v="discover">See all</button></div>
+  ${recent.length ? recent.map(madeRow).join('') : `<div class="soft-empty">Nothing cooked yet. Tap "Made it" on a recipe in your Shopping List, or log a meal yourself.</div>`}
+  <div class="section-row"><h2 class="section-title">Top Matches</h2><button class="link" data-a="tab" data-v="discover">See all</button></div>
   <div class="match-grid">${picks.map(matchCard).join('')}</div>`;
 }
 function shoppingListHTML() {
@@ -332,7 +332,7 @@ function shoppingListHTML() {
   }).join('');
   const recipes = S.cart.map(c => { const r = byId(c.id); if (!r) return ''; return `<div class="cart-row"><div class="thumb">${poster(r, true)}</div><div class="cr-main"><b>${esc(r.title)}</b><div class="cr-actions">${stepper('cart', c.id, c.s)}<button class="made-btn" data-a="markMade" data-id="${c.id}">Made it</button></div></div><button class="si-x" data-a="rmCart" data-id="${c.id}" aria-label="Remove ${esc(r.title)} from list">&times;</button></div>`; }).join('');
   return `
-  <div class="page-head"><span class="eyebrow">This week</span><h1 class="page-title">Shopping list</h1><p class="page-sub">Plan it, check it off, stay on budget.</p></div>
+  <div class="page-head"><span class="eyebrow">This week</span><h1 class="page-title">Shopping List</h1><p class="page-sub">Plan it, check it off, stay on budget.</p></div>
   ${pantryToggle()}
   <button class="receipt-btn" data-a="scanReceipt">${I.cam}<span>Scan receipt</span></button>
   ${warn}
@@ -429,7 +429,7 @@ function recipePane(r, s) {
   return `<h2>${esc(r.title)}</h2><div class="head-row"><span class="sub">Serves</span>${stepper('reel', r.id, s)}</div>
   <h3>Ingredients</h3><ul class="ing">${r.ingredients.map(i => { const t = ingText(i, f), warnings = matchingAllergies(t.name); return `<li><span class="qty">${esc(t.qty) || '&nbsp;'}</span><span class="ing-name">${esc(t.name)}</span>${warnings.length ? `<span class="allergy-warning" role="note" aria-label="Potential allergen: ${esc(warnings.join(', '))}">Allergy: ${esc(warnings.join(', '))}</span>` : ''}</li>`; }).join('')}</ul>
   <h3>Directions</h3><ol class="steps">${r.steps.map(x => `<li>${esc(x.instruction)}</li>`).join('')}</ol>
-  <button class="big-btn alt" data-a="cart" data-id="${r.id}">Add ingredients to Shopping list</button>`;
+  <button class="big-btn alt" data-a="cart" data-id="${r.id}">Add ingredients to Shopping List</button>`;
 }
 function reelHTML(r) {
   const liked = S.liked.includes(r.id), saved = S.collections.some(c => c.ids.includes(r.id)), s = ui.reelServ[r.id] || r.servings || 2, p = per(r);
@@ -715,13 +715,20 @@ function uploadHTML() {
   <label class="post-caption">Post caption (optional)<textarea id="post-caption" placeholder="Add a note about this recipe..." aria-label="Post caption" ${running ? 'disabled' : ''}>${esc(u.caption || '')}</textarea><span>Shown with your video on Discover. Leave blank to use the recipe summary.</span></label>
   <button class="big-btn alt" data-a="process" ${u.video && !running ? '' : 'disabled style="opacity:.4"'}>${running ? 'Working' : 'Turn it into a recipe'}</button>
   ${u.state ? `<ul class="stages">${STAGES.map(([k, l], i) => `<li class="${u.state === 'done' || i < idx ? 'done' : i === idx ? 'run' : ''}"><i></i>${l}</li>`).join('')}</ul>` : ''}
-  ${u.error ? `<div class="note err">${esc(u.error)}</div>` : ''}${u.demo ? `<div class="note">Backend not reachable at ${esc(Api.base())}, so this ran in demo mode with a sample recipe. Start the API with uvicorn, or <a class="small-link" href="#" data-a="apiUrl">change the URL</a>.</div>` : ''}
+  ${u.error ? `<div class="note err" role="alert">${esc(u.error)}</div>` : ''}${u.demo ? `<div class="note err" role="alert"><b>These ingredients are a sample, not from your video.</b> Nourish could not reach the server at ${esc(Api.base())}${u.demoReason ? ' (' + esc(u.demoReason) + ')' : ''}. Start the API with uvicorn, or <a class="small-link" href="#" data-a="apiUrl">change the URL</a>. If the site is on https, the server must be https too and must allow this site in CORS_ORIGINS.</div>` : ''}
   ${u.result ? resultHTML(u.result) : ''}</div>`;
 }
 function resultHTML(r) {
-  const p = per(r);
-  return `<div class="result"><label class="name-field">Video name<input type="text" id="result-title" maxlength="80" value="${esc(r.title)}" aria-label="Video name"></label><p>${r.ingredients.length} ingredients, ${r.steps.length} steps, serves ${r.servings}. About ${Math.round(p.calories)} kcal per serving.</p>
-  <div class="row"><button class="big-btn" data-a="postIt">Post to Discover</button><button class="big-btn alt" data-a="cartResult">Shop it</button></div></div>`;
+  const p = per(r), u = ui.up || {}, f = r.servings ? 1 : 1;
+  const hasNutri = (r.nutrition_total.calories || 0) > 0;
+  const ings = r.ingredients.map(i => { const t = ingText(i, f); return `<li><span class="qty">${esc(t.qty) || '&nbsp;'}</span><span>${esc(t.name)}</span></li>`; }).join('');
+  const warn = (u.warnings || []).map(w => `<li>${esc(w)}</li>`).join('');
+  const stub = (r.tags || []).includes('stub');
+  return `<div class="result"><label class="name-field"><span style="display:inline">Video name</span><input type="text" id="result-title" maxlength="80" value="${esc(r.title)}" aria-label="Video name"></label>
+  ${stub || warn ? `<div class="note${stub ? ' err' : ''}" role="alert" style="margin:0 0 12px">${stub ? '<b>This is a placeholder recipe.</b> ' : ''}${warn ? `The server reported:<ul class="warn-list">${warn}</ul>` : 'The server could not read this video.'}</div>` : ''}
+  <p>${r.ingredients.length} ${r.ingredients.length === 1 ? 'ingredient' : 'ingredients'}, ${r.steps.length} ${r.steps.length === 1 ? 'step' : 'steps'}, serves ${r.servings}. ${hasNutri ? `About ${Math.round(p.calories)} kcal and ${Math.round(p.protein_g)} g protein per serving (estimated).` : 'Nutrition could not be estimated.'}</p>
+  ${ings ? `<ul class="res-ings">${ings}</ul>` : ''}
+  <div class="row"><button class="big-btn" data-a="postIt">Post to Discover</button></div></div>`;
 }
 const prettyName = n => { const s = String(n || '').replace(/\.[^.]+$/, '').replace(/[-_]+/g, ' ').trim(); return s ? s[0].toUpperCase() + s.slice(1) : ''; };
 const VIDEO_EXTS = ['mp4', 'webm'], VIDEO_MIMES = ['video/mp4', 'video/webm'];
@@ -761,14 +768,14 @@ function toRecipe(res, file, caption, title) {
   const r = res.recipe, id = 'up-' + Date.now().toString(36), pals = SEED_RECIPES.map(x => x.palette);
   return {
     id, title: (title || '').trim() || r.title, creator: 'mayamakes', summary: r.summary, caption: (caption || '').trim() || r.summary || '', servings: r.servings || 2, shelfDays: 3, likes: 0,
-    tags: r.tags || [], palette: pals[hash(id) % pals.length], videoUrl: file ? URL.createObjectURL(file) : undefined,
+    tags: r.tags || [], minutes: ((r.prep_time_min || 0) + (r.cook_time_min || 0)) || undefined, palette: pals[hash(id) % pals.length], videoUrl: file ? URL.createObjectURL(file) : undefined,
     ingredients: (r.ingredients || []).map(i => ({ name: i.name, quantity: i.quantity, unit: i.unit || '', note: i.note })),
-    steps: r.steps || [], nutrition_total: r.nutrition_total || { calories: 0, protein_g: 0, fat_g: 0, carbs_g: 0, fiber_g: 0, sugar_g: 0, sodium_mg: 0 }
+    steps: r.steps || [], nutrition_total: Object.fromEntries(['calories', 'protein_g', 'fat_g', 'carbs_g', 'fiber_g', 'sugar_g', 'sodium_mg'].map(k => [k, Number((r.nutrition_total || {})[k]) || 0]))
   };
 }
 const wait = ms => new Promise(r => setTimeout(r, ms));
 async function process() {
-  const u = ui.up; u.state = 'running'; u.stage = STAGES[0][0]; u.error = null; u.demo = false; u.result = null; renderProfile();
+  const u = ui.up; u.state = 'running'; u.stage = STAGES[0][0]; u.error = null; u.demo = false; u.warnings = []; u.result = null; renderProfile();
   try {
     const { job_id } = await Api.upload(u.video, u.captions);
     for (;;) {
@@ -778,11 +785,13 @@ async function process() {
       if (s.status === 'completed') break;
       renderProfile();
     }
-    u.result = toRecipe(await Api.result(job_id), u.video, u.caption, u.title); u.state = 'done';
+    const raw = await Api.result(job_id);
+    u.warnings = raw.warnings || [];
+    u.result = toRecipe(raw, u.video, u.caption, u.title); u.state = 'done';
   } catch (e) {
     if (e.server) { u.state = null; u.error = e.message; }
     else {
-      u.demo = true;
+      u.demo = true; u.demoReason = (e && e.message) || '';
       for (const [k] of STAGES) { u.stage = k; renderProfile(); await wait(550); }
       const name = u.video.name.replace(/\.[^.]+$/, '').replace(/[-_]+/g, ' ');
       u.result = toRecipe({ recipe: { title: name ? name[0].toUpperCase() + name.slice(1) : 'Untitled recipe', summary: 'Processed from your upload.', servings: 2, tags: ['new'],
@@ -904,7 +913,7 @@ const A = {
   },
   askDelete(el) {
     const r = S.uploaded.find(x => x.id === el.dataset.id); if (!r) return;
-    openSheet(`<h3>Delete this video?</h3><p class="sheet-note">&ldquo;${esc(r.title)}&rdquo; will be removed from Discover, your collections, shopping list and nutrition log. This can't be undone.</p><button class="danger-btn" data-a="confirmDelete" data-id="${r.id}">Delete video</button><button class="ghost-btn" data-a="closeSheet">Cancel</button>`);
+    openSheet(`<h3>Delete this video?</h3><p class="sheet-note">&ldquo;${esc(r.title)}&rdquo; will be removed from Discover, your collections, Shopping List and nutrition log. This can't be undone.</p><button class="danger-btn" data-a="confirmDelete" data-id="${r.id}">Delete video</button><button class="ghost-btn" data-a="closeSheet">Cancel</button>`);
   },
   confirmDelete(el) {
     const id = el.dataset.id, r = S.uploaded.find(x => x.id === id); if (!r) return closeSheet();
@@ -995,7 +1004,6 @@ const A = {
   apiUrl(el, e) { e.preventDefault(); openSheet(`<h3>Backend URL</h3><input type="text" id="au" value="${esc(Api.base())}" aria-label="API base URL"><button class="big-btn" data-a="saveApi" style="margin:12px 0 0">Save</button>`); },
   saveApi() { localStorage.setItem('nurish.api', $('#au').value.trim()); closeSheet(); renderProfile(); },
   postIt() { const r = ui.up.result; r.title = (r.title || '').trim() || 'Untitled recipe'; r.caption = (ui.up.caption || '').trim() || r.summary || ''; S.uploaded.unshift(r); save(); keepVideo(r.id, ui.up.video); reelsBuilt && renderFeed(); ui.up = null; ui.profTab = 'posts'; renderProfile(); toast('Posted to Discover'); },
-  cartResult() { const r = ui.up.result; r.title = (r.title || '').trim() || 'Untitled recipe'; r.caption = (ui.up.caption || '').trim() || r.summary || ''; S.uploaded.unshift(r); S.cart.push({ id: r.id, s: r.servings }); save(); keepVideo(r.id, ui.up.video); reelsBuilt && renderFeed(); ui.up = null; ui.profTab = 'posts'; renderProfile(); toast('Posted and added to your shopping list'); }
 };
 document.addEventListener('click', e => {
   const el = e.target.closest('[data-a]'); if (!el || el.tagName === 'INPUT') return;

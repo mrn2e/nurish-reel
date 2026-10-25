@@ -30,7 +30,7 @@ nav (Pantry · Nutrition · Discover · Cookbooks · Profile) with a coral activ
 
 | Tab | What it does |
 |-----|--------------|
-| Pantry | "My Pantry" with stat cards (items / use soon / low), a "Scan your fridge" CTA, and a "Meals you can make" grid of recipe cards with a % pantry-match badge, cook time and price. Tapping a card opens it as a full-screen recipe reel. |
+| Pantry | "My Pantry" with stat cards (items / use soon / low), a "Scan your fridge" CTA, and a "Top Matches" grid of recipe cards with a % pantry-match badge, cook time and price. Tapping a card opens it as a full-screen recipe reel. |
 | Nutrition | Daily / Weekly segmented toggle. Daily shows a dark-green energy hero card (calorie ring + kcal left), Protein/Carbs/Fat macro cards, and a "Today's meals" list with + Add meal. Weekly shows the 7-day bar chart against your goal. Tap the ring to change the goal. |
 | Discover | Vertical reel feed. Swipe left/right inside a reel: Nutrition pie, Video, Recipe. Each reel has a pantry-match pill, creator handle + Follow, meta chips (time / protein / price), a coral "Make this recipe" button, and a rail with like, comments, save to collection, and share. Long captions show a 25-character preview with a More / Less control; the caption toggle minimizes the overlay to its creator and title or restores it. |
 | Cookbooks | "My Cookbooks" with a featured collection banner and a 2-col collection grid (+ Create). Opening one plays that collection as a feed. |
