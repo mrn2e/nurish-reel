@@ -709,26 +709,14 @@ function uploadHTML() {
   return `<div class="up"><label class="drop" id="drop"><b>Drop a cooking video</b><span>${u.video ? esc(u.video.name) : 'or tap to choose a file'}</span><input type="file" id="vid" accept=".mp4,.webm,video/mp4,video/webm"></label>
   <p class="fmt-hint">MP4 or WebM only, so your video plays on every device.</p>
   ${u.fileError ? `<div class="note err" role="alert">${esc(u.fileError)}</div>` : ''}
-  ${u.playWarn ? `<div class="note err">This browser can't play that video, so your post would only show artwork. Convert it to MP4 (H.264) or WebM and choose it again. You can still turn it into a recipe.</div>` : ''}
+  ${u.playWarn ? `<div class="note err">This browser can't play that video, so your post would only show artwork. Convert it to MP4 (H.264) or WebM and choose it again. You can still post it.</div>` : ''}
   <div class="file-line"><span>Captions (optional): <b>${u.captions ? esc(u.captions.name) : 'none'}</b></span><label class="small-link" style="cursor:pointer">Add .srt or .vtt<input type="file" id="cap" accept=".srt,.vtt" hidden></label></div>
   <label class="name-field">Video name<input type="text" id="post-title" maxlength="80" value="${esc(u.title || '')}" placeholder="Name your video" ${running ? 'disabled' : ''}><span>Becomes the recipe title on Discover and in your profile. Leave blank to use the generated title.</span></label>
   <label class="post-caption">Post caption (optional)<textarea id="post-caption" placeholder="Add a note about this recipe..." aria-label="Post caption" ${running ? 'disabled' : ''}>${esc(u.caption || '')}</textarea><span>Shown with your video on Discover. Leave blank to use the recipe summary.</span></label>
-  <button class="big-btn alt" data-a="process" ${u.video && !running ? '' : 'disabled style="opacity:.4"'}>${running ? 'Working' : 'Turn it into a recipe'}</button>
+  <button class="big-btn alt" data-a="process" ${u.video && !running ? '' : 'disabled style="opacity:.4"'}>${running ? 'Posting' : 'Post to Discover'}</button>
   ${u.state ? `<ul class="stages">${STAGES.map(([k, l], i) => `<li class="${u.state === 'done' || i < idx ? 'done' : i === idx ? 'run' : ''}"><i></i>${l}</li>`).join('')}</ul>` : ''}
   ${u.error ? `<div class="note err" role="alert">${esc(u.error)}</div>` : ''}
-  ${u.result ? resultHTML(u.result) : ''}</div>`;
-}
-function resultHTML(r) {
-  const p = per(r), u = ui.up || {}, f = r.servings ? 1 : 1;
-  const hasNutri = (r.nutrition_total.calories || 0) > 0;
-  const ings = r.ingredients.map(i => { const t = ingText(i, f); return `<li><span class="qty">${esc(t.qty) || '&nbsp;'}</span><span>${esc(t.name)}</span></li>`; }).join('');
-  const warn = (u.warnings || []).map(w => `<li>${esc(w)}</li>`).join('');
-  const stub = (r.tags || []).includes('stub');
-  return `<div class="result"><label class="name-field"><span style="display:inline">Video name</span><input type="text" id="result-title" maxlength="80" value="${esc(r.title)}" aria-label="Video name"></label>
-  ${stub || warn ? `<div class="note${stub ? ' err' : ''}" role="alert" style="margin:0 0 12px">${stub ? '<b>This is a placeholder recipe.</b> ' : ''}${warn ? `The server reported:<ul class="warn-list">${warn}</ul>` : 'The server could not read this video.'}</div>` : ''}
-  <p>${r.ingredients.length} ${r.ingredients.length === 1 ? 'ingredient' : 'ingredients'}, ${r.steps.length} ${r.steps.length === 1 ? 'step' : 'steps'}, serves ${r.servings}. ${hasNutri ? `About ${Math.round(p.calories)} kcal and ${Math.round(p.protein_g)} g protein per serving (estimated).` : 'Nutrition could not be estimated.'}</p>
-  ${ings ? `<ul class="res-ings">${ings}</ul>` : ''}
-  <div class="row"><button class="big-btn" data-a="postIt">Post to Discover</button></div></div>`;
+</div>`;
 }
 const prettyName = n => { const s = String(n || '').replace(/\.[^.]+$/, '').replace(/[-_]+/g, ' ').trim(); return s ? s[0].toUpperCase() + s.slice(1) : ''; };
 const VIDEO_EXTS = ['mp4', 'webm'], VIDEO_MIMES = ['video/mp4', 'video/webm'];
@@ -758,9 +746,8 @@ function bindUpload(el) {
   v && v.addEventListener('change', () => chooseVideo(v.files[0]));
   c && c.addEventListener('change', () => { ui.up = { ...(ui.up || {}), captions: c.files[0] }; renderProfile(); });
   caption && caption.addEventListener('input', () => { ui.up = { ...(ui.up || {}), caption: caption.value }; });
-  const title = $('#post-title', el), rtitle = $('#result-title', el);
+  const title = $('#post-title', el);
   title && title.addEventListener('input', () => { ui.up = { ...(ui.up || {}), title: title.value, titleEdited: true }; });
-  rtitle && rtitle.addEventListener('input', () => { if (ui.up && ui.up.result) ui.up.result.title = rtitle.value; });
   if (d) { ['dragover', 'dragenter'].forEach(e => d.addEventListener(e, ev => { ev.preventDefault(); d.classList.add('over'); })); ['dragleave', 'drop'].forEach(e => d.addEventListener(e, () => d.classList.remove('over')));
     d.addEventListener('drop', ev => { ev.preventDefault(); const f = ev.dataTransfer.files[0]; if (f) chooseVideo(f); }); }
 }
@@ -774,8 +761,16 @@ function toRecipe(res, file, caption, title) {
   };
 }
 const wait = ms => new Promise(r => setTimeout(r, ms));
+function publishUpload(u, r, note) {
+  r.title = (r.title || '').trim() || 'Untitled recipe';
+  r.caption = (u.caption || '').trim() || r.summary || '';
+  S.uploaded.unshift(r); save(); keepVideo(r.id, u.video);
+  reelsBuilt && renderFeed();
+  ui.up = null; ui.profTab = 'posts'; renderProfile(); toast(note || 'Posted to Discover');
+}
 async function process() {
-  const u = ui.up; u.state = 'running'; u.stage = STAGES[0][0]; u.error = null; u.demo = false; u.warnings = []; u.result = null; renderProfile();
+  const u = ui.up; u.state = 'running'; u.stage = STAGES[0][0]; u.error = null; renderProfile();
+  let raw = null, note = '';
   try {
     const { job_id } = await Api.upload(u.video, u.captions);
     for (;;) {
@@ -785,23 +780,19 @@ async function process() {
       if (s.status === 'completed') break;
       renderProfile();
     }
-    const raw = await Api.result(job_id);
-    u.warnings = raw.warnings || [];
-    u.result = toRecipe(raw, u.video, u.caption, u.title); u.state = 'done';
+    raw = await Api.result(job_id);
   } catch (e) {
-    if (e.server) { u.state = null; u.error = e.message; }
-    else {
-      u.demo = true; u.demoReason = (e && e.message) || '';
-      for (const [k] of STAGES) { u.stage = k; renderProfile(); await wait(550); }
-      const name = u.video.name.replace(/\.[^.]+$/, '').replace(/[-_]+/g, ' ');
-      u.result = toRecipe({ recipe: { title: name ? name[0].toUpperCase() + name.slice(1) : 'Untitled recipe', summary: 'Processed from your upload.', servings: 2, tags: ['new'],
-        ingredients: [{ name: 'olive oil', quantity: 2, unit: 'tbsp' }, { name: 'garlic cloves', quantity: 3, unit: '' }, { name: 'tomatoes', quantity: 4, unit: '' }, { name: 'pasta', quantity: 200, unit: 'g' }],
-        steps: [{ number: 1, instruction: 'Sample step from the stub pipeline.' }, { number: 2, instruction: 'Serve warm.' }],
-        nutrition_total: { calories: 820, protein_g: 24, fat_g: 28, carbs_g: 110, fiber_g: 8, sugar_g: 12, sodium_mg: 900 } } }, u.video, u.caption, u.title);
-      u.state = 'done';
-    }
+    if (e.server) { u.state = null; u.error = e.message; renderProfile(); return; }
+    // Server unreachable: still post the video, but never invent ingredients for it.
+    raw = { recipe: { title: prettyName(u.video.name) || 'Untitled recipe', ingredients: [], steps: [], tags: [], nutrition_total: null } };
+    note = "Posted. The server couldn't be reached, so no ingredients were added.";
   }
-  renderProfile();
+  const r = toRecipe(raw, u.video, u.caption, u.title);
+  if ((r.tags || []).includes('stub')) {   // the server only had a placeholder: keep the video, drop the junk text
+    r.ingredients = []; r.steps = []; r.summary = ''; r.tags = [];
+    note = 'Posted without ingredients. ' + ((raw.warnings || [])[0] || 'The server could not read this video.');
+  }
+  publishUpload(u, r, note);
 }
 
 /* ---------- actions ---------- */
@@ -1003,7 +994,6 @@ const A = {
   process,
   apiUrl(el, e) { e.preventDefault(); openSheet(`<h3>Backend URL</h3><input type="text" id="au" value="${esc(Api.base())}" aria-label="API base URL"><button class="big-btn" data-a="saveApi" style="margin:12px 0 0">Save</button>`); },
   saveApi() { localStorage.setItem('nurish.api', $('#au').value.trim()); closeSheet(); renderProfile(); },
-  postIt() { const r = ui.up.result; r.title = (r.title || '').trim() || 'Untitled recipe'; r.caption = (ui.up.caption || '').trim() || r.summary || ''; S.uploaded.unshift(r); save(); keepVideo(r.id, ui.up.video); reelsBuilt && renderFeed(); ui.up = null; ui.profTab = 'posts'; renderProfile(); toast('Posted to Discover'); },
 };
 document.addEventListener('click', e => {
   const el = e.target.closest('[data-a]'); if (!el || el.tagName === 'INPUT') return;

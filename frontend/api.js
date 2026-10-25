@@ -1,7 +1,11 @@
 /* Thin client for the nurish-reel FastAPI backend.
    Set the base URL with window.NURISH_API or localStorage "nurish.api". */
 const Api = (() => {
-  const base = () => (window.NURISH_API || localStorage.getItem('nurish.api') || 'http://localhost:8000').replace(/\/$/, '');
+  // Default: the backend on the same machine that served this page, port 8000. That means opening the app
+  // at http://localhost:5173 uses localhost:8000, and opening it at http://192.168.1.20:5173 from a phone
+  // uses 192.168.1.20:8000, so a laptop can host everything for other devices on the same Wi-Fi.
+  const sameHost = () => (/^https?:$/.test(location.protocol) && location.hostname ? 'http://' + location.hostname + ':8000' : 'http://localhost:8000');
+  const base = () => (window.NURISH_API || localStorage.getItem('nurish.api') || sameHost()).replace(/\/$/, '');
 
   // HTTP errors are real answers from the server: keep the message and do NOT treat them
   // as "backend unreachable". Only a failed fetch() (network, CORS, wrong URL) has no `server` flag.

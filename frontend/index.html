@@ -59,9 +59,9 @@
 </div>
 <script src="data.js"></script>
 <script>
-  /* Deployed site: use the hosted backend. Running locally (localhost or a file): leave empty so the
-     app talks to http://localhost:8000, or to whatever you set with the "change the URL" link. */
-  window.NURISH_API = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) || location.protocol === 'file:'
+  /* Deployed site: use the hosted backend. Running on your own machine or home network: leave empty so the
+     app talks to the backend on port 8000 of the same machine, or to whatever you set with the "change the URL" link. */
+  window.NURISH_API = /^(localhost|127\.0\.0\.1|10\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+|[^.]+\.local)$/.test(location.hostname) || location.protocol === 'file:'
     ? '' : 'https://nurish-real-api.onrender.com';
 </script>
 <script src="api.js"></script>
