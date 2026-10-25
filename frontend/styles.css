@@ -83,7 +83,7 @@ button:focus-visible,input:focus-visible,[tabindex]:focus-visible{outline:3px so
 .stat .k{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--mute)}
 .stat .v{font-family:var(--display);font-weight:600;font-size:34px;letter-spacing:-.02em;margin-top:8px;line-height:1}
 .stat.soon .v{color:var(--coral-ink)}
-.cta-card{margin:18px 22px 0;background:var(--forest);color:#fff;border-radius:22px;padding:18px 20px;display:flex;align-items:center;gap:16px}
+.cta-card{width:calc(100% - 44px);text-align:left;margin:18px 22px 0;background:var(--forest);color:#fff;border-radius:22px;padding:18px 20px;display:flex;align-items:center;gap:16px}
 .cta-card .cta-ic{width:46px;height:46px;border-radius:14px;background:rgba(255,255,255,.14);display:grid;place-items:center;flex:none}
 .cta-card .cta-ic svg{width:24px;height:24px;fill:none;stroke:#fff;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .cta-card .cta-t{flex:1}
@@ -395,3 +395,68 @@ button:focus-visible,input:focus-visible,[tabindex]:focus-visible{outline:3px so
 
 /* theme fixes */
 .phone[data-tab="discover"] .appbar .round svg{stroke:#1B2620}
+
+/* sound toggle on video posts */
+#viewer .snd{top:calc(env(safe-area-inset-top) + 14px)}
+
+.vid-note{position:absolute;z-index:3;top:calc(env(safe-area-inset-top) + var(--bar) + 30px);left:14px;right:64px;padding:10px 12px;border-radius:12px;background:rgba(14,22,18,.78);backdrop-filter:blur(6px);color:#fff;font-size:13px;line-height:1.35}
+#viewer .vid-note{top:calc(env(safe-area-inset-top) + 66px)}
+
+.fmt-hint{margin:10px 2px 0;color:var(--mute);font-size:13px}
+.up .note.err{margin-top:12px}
+
+/* sound button: always above overlays, easy to spot while muted */
+.snd{position:absolute;z-index:6;top:calc(env(safe-area-inset-top) + var(--bar) + 30px);right:14px;height:40px;min-width:132px;padding:0 12px;border-radius:20px;background:rgba(14,22,18,.66);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;gap:7px;color:#fff;font-size:12.5px;font-weight:700;white-space:nowrap}
+.snd svg{width:21px;height:21px;flex:none;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.viewer-title{pointer-events:none;right:70px}
+.vid-note{pointer-events:none}
+
+/* pantry sub-tabs, created recently, budget */
+.meal-card .chip{flex:none;margin-left:auto}
+.chip.warn{background:var(--err-bg);color:var(--err-ink)}
+.soft-empty{margin:0 22px;padding:16px;border:1.5px dashed var(--line);border-radius:16px;color:var(--mute);font-size:14px;line-height:1.45}
+.eaten-row{display:flex;align-items:center;gap:10px;margin-top:6px}
+.eaten-row button{width:44px;height:44px;border-radius:50%;background:var(--forest);color:#fff;font-size:24px;line-height:1;flex:none}
+.eaten-row input{width:72px;height:44px;border-radius:14px;border:1.5px solid var(--ink);background:var(--card);color:var(--ink);text-align:center;font:inherit;font-size:20px;font-weight:700}
+.eaten-row span{color:var(--mute);font-size:14px}
+.receipt-btn{display:flex;align-items:center;justify-content:center;gap:10px;width:calc(100% - 44px);margin:16px 22px 0;padding:15px;border-radius:16px;background:var(--forest);color:#fff;font-weight:700;font-size:16px}
+.receipt-btn svg{width:22px;height:22px;fill:none;stroke:#fff;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.warn-banner{display:flex;gap:12px;align-items:flex-start;margin:14px 22px 0;padding:14px;border-radius:16px;background:var(--err-bg);color:var(--err-ink);border:1px solid var(--coral)}
+.warn-banner svg{width:24px;height:24px;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;margin-top:1px}
+.warn-banner b{display:block;font-size:15px}
+.warn-banner span{display:block;font-size:13.5px;line-height:1.4;margin-top:2px}
+.budget-card{margin:14px 22px 0;padding:16px;border-radius:22px;background:var(--card);border:1px solid var(--line)}
+.bc-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:10px}
+.bc-head .section-title{font-size:22px}
+.bc-body{display:flex;align-items:center;gap:18px}
+.bc-legend{list-style:none;display:grid;gap:14px;min-width:0}
+.bc-legend li{display:flex;align-items:center;gap:10px}
+.bc-legend i{width:14px;height:14px;border-radius:5px;flex:none}
+.bc-legend b{display:block;font-family:var(--display);font-weight:600;font-size:21px;letter-spacing:-.01em;line-height:1.1}
+.bc-legend span{color:var(--mute);font-size:13px}
+.bc-key{display:inline-flex;align-items:center;gap:6px;color:var(--mute);font-size:12.5px;font-weight:600}
+.bc-key i{width:10px;height:10px;border-radius:3px;margin-left:6px}
+.budget-card svg{display:block;width:100%}
+.cart-rows{display:grid;grid-template-columns:minmax(0,1fr);gap:10px;padding:0 22px}
+.cart-row{display:flex;align-items:center;gap:12px;min-width:0;padding:10px;border-radius:18px;background:var(--card);border:1px solid var(--line)}
+.cart-row .thumb{width:54px;height:54px;border-radius:12px;overflow:hidden;flex:none;background:var(--placeholder)}
+.cr-main{flex:1;min-width:0}
+.cr-main b{display:block;font-family:var(--display);font-weight:600;font-size:17px;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cr-actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;margin-top:6px}
+.made-btn{padding:0 14px;height:34px;border-radius:999px;border:1.5px solid var(--ink);font-weight:700;font-size:13.5px}
+.si-x{flex:none;width:34px;height:34px;color:var(--mute);font-size:22px;line-height:1}
+.cat-head{display:flex;justify-content:space-between;align-items:baseline;margin:18px 22px 4px;font-family:var(--display);font-weight:600;font-size:19px}
+.cat-head span{font-family:var(--body);font-size:13px;font-weight:600;color:var(--mute)}
+.shop-list{list-style:none;margin:0 22px;border-top:1px solid var(--line)}
+.shop-item{display:flex;align-items:center;border-bottom:1px solid var(--line)}
+.shop-item label{flex:1;min-width:0;display:flex;align-items:center;gap:14px;padding:13px 0;cursor:pointer}
+.shop-item input{appearance:none;width:26px;height:26px;border:2px solid var(--ink);border-radius:8px;display:grid;place-items:center;flex:none;cursor:pointer}
+.shop-item input:checked{background:var(--forest);border-color:var(--forest)}
+.shop-item input:checked::after{content:'';width:11px;height:6px;border-left:3px solid var(--sage);border-bottom:3px solid var(--sage);transform:rotate(-45deg) translate(1px,-1px)}
+.si-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.si-name{font-size:16px;font-weight:600}
+.si-sub{color:var(--mute);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.si-price{flex:none;font-weight:700;font-variant-numeric:tabular-nums}
+.shop-item.done .si-name,.shop-item.done .si-price{color:var(--struck);text-decoration:line-through}
+.shop-item.done .si-sub{opacity:.6}
+.shop-item .si-x{margin-left:4px}

@@ -30,6 +30,10 @@ from app.services.storage import build_storage
 
 router = APIRouter(prefix="/api/videos", tags=["videos"])
 
+# Only formats that play on practically every device are accepted.
+ALLOWED_VIDEO_EXTENSIONS = {"mp4", "webm"}
+ALLOWED_VIDEO_CONTENT_TYPES = {"video/mp4", "video/webm", "application/octet-stream"}
+
 
 class JobCreatedResponse(BaseModel):
     job_id: str
@@ -69,6 +73,13 @@ async def upload_video(
 
     upload_id = uuid.uuid4().hex
     suffix = (video.filename or "video").rsplit(".", 1)[-1].lower()
+    if suffix not in ALLOWED_VIDEO_EXTENSIONS or (
+        video.content_type and video.content_type not in ALLOWED_VIDEO_CONTENT_TYPES
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+            detail="Unsupported video type. Upload an MP4 or WebM file.",
+        )
     video_key = f"uploads/{upload_id}/source.{suffix}"
     storage.save_bytes(video_key, await video.read())
 

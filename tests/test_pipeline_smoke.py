@@ -51,3 +51,23 @@ def test_upload_and_process_stub() -> None:
     assert "shopping_list" in body
     # The caption text should have flowed into the transcript evidence / stub.
     assert body["recipe"]["title"]
+
+
+def test_rejects_unsupported_video_types() -> None:
+    client = TestClient(app)
+    for name, ctype in [("clip.mov", "video/quicktime"), ("clip.avi", "video/x-msvideo"), ("notes.txt", "text/plain")]:
+        resp = client.post(
+            "/api/videos",
+            files={"video": (name, io.BytesIO(b"x"), ctype)},
+        )
+        assert resp.status_code == 415, (name, resp.text)
+
+
+def test_accepts_mp4_and_webm() -> None:
+    client = TestClient(app)
+    for name, ctype in [("clip.mp4", "video/mp4"), ("clip.webm", "video/webm")]:
+        resp = client.post(
+            "/api/videos",
+            files={"video": (name, io.BytesIO(b"x"), ctype)},
+        )
+        assert resp.status_code == 202, (name, resp.text)
