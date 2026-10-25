@@ -1,7 +1,10 @@
-# Vercel only serves the static frontend/ folder (see vercel.json).
-# Exclude the Python backend so Vercel does not try to build or invoke it
-# as a serverless function.
+# Vercel hosts ONLY the static frontend/ folder (see vercel.json).
+# The Python backend is deployed separately on Render (see Dockerfile /
+# render.yaml / README "Deploy"), so exclude everything backend-related here
+# to keep the Vercel build to just the static site.
 app/
 tests/
 requirements.txt
 .env.example
+Dockerfile
+render.yaml

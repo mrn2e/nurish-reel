@@ -127,9 +127,69 @@ optional; absent keys activate the stub fallbacks above.
 |----------|---------|
 | `GEMINI_API_KEY` | Audio transcription **and** recipe structuring (JSON output) |
 | `USDA_API_KEY` | Nutrition lookup ([sign up](https://fdc.nal.usda.gov/api-key-signup.html)) |
+| `CORS_ORIGINS` | Comma-separated frontend origins allowed in prod (ignored in dev) |
 | `DATABASE_URL` | SQLite (default) or Postgres |
 | `STORAGE_BACKEND` | `local` (default) or `s3` (+ `S3_*` vars; works with MinIO) |
 | `AUTH0_DOMAIN`, `AUTH0_AUDIENCE` | Enable Auth0 JWT validation (dev stub user when unset) |
+
+## Deploy (Vercel frontend + Render backend)
+
+The app is two pieces: a **static frontend** (Vercel) and the **FastAPI
+backend** (Render). They must be deployed separately — Vercel's serverless
+runtime cannot run `ffmpeg` or the background pipeline, so the backend lives on
+a container host. The pieces connect by pointing the frontend at the backend's
+URL.
+
+> **Why not Vercel for the backend?** The pipeline shells out to `ffmpeg` for
+> audio/keyframe extraction. Without it, Stage 1 no-ops, no audio is produced,
+> and every transcript comes back as the stub — which is exactly the symptom of
+> a frontend talking to a backend (or non-backend) that lacks `ffmpeg`.
+
+### 1. Backend → Render
+
+This repo ships a `Dockerfile` (installs `ffmpeg` + `tesseract`) and a
+`render.yaml` Blueprint.
+
+1. Push this repo to GitHub.
+2. In Render: **New → Blueprint**, select the repo. Render reads `render.yaml`
+   and creates a free **Docker** web service.
+3. Set the secret env vars when prompted (marked `sync:false`):
+   - `GEMINI_API_KEY` — your Gemini key (powers transcription **and** structuring)
+   - `USDA_API_KEY` — your USDA key
+   - `CORS_ORIGINS` — your Vercel URL, e.g. `https://nurish-reel.vercel.app`
+     (leave blank to allow all origins — simplest for a demo)
+4. Deploy. When it's live, open `https://<service>.onrender.com/health` — it
+   should return `{"status":"ok","env":"prod"}`.
+
+> Render's **free plan sleeps after ~15 min idle** and cold-starts on the next
+> request (a few seconds). Fine for a hackathon demo.
+
+### 2. Point the frontend at the backend
+
+The frontend's API base defaults to `http://localhost:8000`. Override it with
+the deployed backend URL in **one** of these ways:
+
+- In the running app's profile/settings sheet, set the API field (persists to
+  `localStorage["nurish.api"]`), **or**
+- In the browser console on your Vercel site:
+  ```js
+  localStorage.setItem('nurish.api', 'https://<service>.onrender.com');
+  location.reload();
+  ```
+- Or hard-code a default in `frontend/index.html` before `api.js` loads:
+  ```html
+  <script>window.NURISH_API = 'https://<service>.onrender.com';</script>
+  ```
+
+### Common gotcha: "stub transcript" output
+
+If uploads return *"Gemini transcription was not run…"*, check in order:
+1. The frontend is pointed at the real backend (`localStorage["nurish.api"]`),
+   not the `localhost:8000` default.
+2. `GEMINI_API_KEY` is set **on the backend** (Render), not only on Vercel —
+   Vercel env vars are invisible to the Render backend.
+3. The backend image has `ffmpeg` (the provided `Dockerfile` installs it). No
+   ffmpeg → no audio → stub, even with a valid key.
 
 ## Production notes (swap points)
 

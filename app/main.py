@@ -33,11 +33,22 @@ def create_app() -> FastAPI:
         lifespan=lifespan,
     )
 
-    # CORS — tighten allow_origins to your frontend origin in production.
+    # CORS.
+    #  - dev: allow any origin (no credentials, so "*" is valid).
+    #  - prod: allow only the origins listed in CORS_ORIGINS (e.g. your Vercel
+    #    domain). If none are configured, fall back to "*" so the demo still
+    #    works out of the box.
+    #  NOTE: the CORS spec forbids allow_credentials=True together with "*";
+    #  this backend uses Bearer tokens, not cookies, so credentials stay off.
+    if settings.is_dev or not settings.cors_origin_list:
+        allow_origins = ["*"]
+    else:
+        allow_origins = settings.cors_origin_list
+
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"] if settings.is_dev else [],
-        allow_credentials=True,
+        allow_origins=allow_origins,
+        allow_credentials=False,
         allow_methods=["*"],
         allow_headers=["*"],
     )
