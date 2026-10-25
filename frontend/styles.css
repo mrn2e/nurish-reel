@@ -460,3 +460,13 @@ button:focus-visible,input:focus-visible,[tabindex]:focus-visible{outline:3px so
 .shop-item.done .si-name,.shop-item.done .si-price{color:var(--struck);text-decoration:line-through}
 .shop-item.done .si-sub{opacity:.6}
 .shop-item .si-x{margin-left:4px}
+
+/* discover filters, log note */
+.round{position:relative}
+.fbadge{position:absolute;top:-4px;right:-4px;min-width:19px;height:19px;padding:0 5px;border-radius:10px;background:var(--coral);color:#fff;font-size:11px;font-weight:700;display:grid;place-items:center;border:2px solid var(--paper)}
+.f-group{margin-top:14px}
+.f-group h4{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--mute);margin-bottom:8px}
+.fchips{display:flex;flex-wrap:wrap;gap:8px}
+.fchip{padding:10px 15px;border-radius:999px;border:1.5px solid var(--line);background:var(--card);font-weight:600;font-size:14.5px}
+.fchip[aria-pressed="true"]{background:var(--coral);color:#fff;border-color:var(--coral)}
+.log-note{min-height:20px;margin-top:10px;text-align:center;color:var(--sage);font-size:14px;font-weight:600}

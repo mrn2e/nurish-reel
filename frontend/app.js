@@ -49,7 +49,7 @@ const save = () => {
     localStorage.setItem(KEY, JSON.stringify(copy));
   } catch (e) {}
 };
-const ui = { pantryTab: 'pantry', nutTab: 'daily', profTab: 'posts', filter: '', chip: 'all', reelServ: {}, captionExpanded: {}, sound: false, up: null };
+const ui = { fl: { proteins: [], maxPrice: 0, maxTime: 0 }, pantryTab: 'pantry', nutTab: 'daily', profTab: 'posts', filter: '', chip: 'all', reelServ: {}, captionExpanded: {}, sound: false, up: null };
 
 const allRecipes = () => [...S.uploaded, ...SEED_RECIPES];
 const byId = id => allRecipes().find(r => r.id === id);
@@ -189,6 +189,20 @@ function addToLog(id, meal, s = 1) {
   if (ex) ex.s += s; else l.push({ id, s });
   save();
 }
+function removeFromLog(id, n) {
+  const day = todayLog(), first = guessMeal();
+  for (const meal of [first, ...MEALS.filter(x => x !== first)]) {
+    const list = day[meal] || [];
+    for (let i = list.length - 1; i >= 0 && n > 0; i--) {
+      if (list[i].id !== id) continue;
+      const take = Math.min(list[i].s, n); list[i].s -= take; n -= take;
+      if (list[i].s <= 0) list.splice(i, 1);
+    }
+  }
+  save();
+}
+const servedToday = id => MEALS.reduce((a, m) => a + (todayLog()[m] || []).filter(e => e.id === id).reduce((b, e) => b + e.s, 0), 0);
+const logNote = id => { const n = servedToday(id); return n ? `Logged today: ${n} ${n === 1 ? 'serving' : 'servings'}` : ''; };
 function addToCart(id) {
   const r = byId(id);
   if (S.cart.find(c => c.id === id)) { toast('Already on your shopping list'); return; }
@@ -201,9 +215,9 @@ function renderAppbar(tab) {
   const map = {
     pantry: '',
     nutrition: `<button class="round" data-a="nutSearch" aria-label="Search">${I.search}</button>`,
-    discover: `<button class="round" data-a="nutSearch" aria-label="Search">${I.search}</button><button class="round" data-a="filters" aria-label="Filters">${I.slider}</button>`,
+    discover: `<button class="round" data-a="nutSearch" aria-label="Search">${I.search}</button><button class="round" data-a="filters" aria-label="Filter videos${activeFilterCount() ? ', ' + activeFilterCount() + ' active' : ''}">${I.slider}${activeFilterCount() ? `<span class="fbadge">${activeFilterCount()}</span>` : ''}</button>`,
     cookbooks: `<button class="round" data-a="nutSearch" aria-label="Search">${I.search}</button>`,
-    profile: `<button class="round" data-a="editProfile" aria-label="Settings">${I.slider}</button>`
+    profile: ''
   };
   host.innerHTML = map[tab] || '';
 }
@@ -431,7 +445,7 @@ function reelHTML(r) {
   <div class="pane info" aria-label="Nutrition"><div class="pane-scroll"><h2>${esc(r.title)}</h2><p class="sub">Nutrition per serving</p><div class="pie-wrap">${pie(r)}</div>
     <ul class="legend">${MACROS.map(([n, k, c]) => `<li><i style="background:${c}"></i><div><b>${Math.round(p[k])} g</b><span>${n}</span></div></li>`).join('')}</ul>
     <p class="sub" style="margin-top:16px">Sodium ${Math.round(p.sodium_mg)} mg · sugar ${Math.round(p.sugar_g)} g</p>
-    <button class="big-btn" data-a="logFromReel" data-id="${r.id}">Log a serving</button></div><button class="edge r" data-a="pane" data-p="1">Video</button></div>
+    <button class="big-btn" data-a="logFromReel" data-id="${r.id}">Log a serving</button><p class="log-note" data-log-note="${r.id}" role="status">${logNote(r.id)}</p></div><button class="edge r" data-a="pane" data-p="1">Video</button></div>
   <div class="pane video">${poster(r)}${r.videoUrl ? `<video src="${r.videoUrl}" loop muted playsinline preload="auto" data-a="vid"></video>` : ''}<div class="shade"></div>
     ${!r.videoUrl && S.uploaded.some(x => x.id === r.id) ? `<div class="vid-note" role="status">The video file isn't saved for this post. Upload it again to play it.</div>` : ''}
     ${r.videoUrl ? `<button class="snd" data-a="sound" aria-label="${ui.sound ? 'Mute' : 'Unmute'} video" aria-pressed="${!!ui.sound}">${sndHTML()}</button>` : ''}
@@ -474,12 +488,39 @@ function mountFeed(root) {
     $$('.reel', root).forEach(r => io.observe(r));
   }
 }
+const PROTEIN_RULES = [['chicken', /chicken|turkey/], ['beef', /beef|ribeye|steak|brisket/], ['pork', /pork|bacon|ham\b|sausage/], ['seafood', /fish|salmon|shrimp|tuna|cod\b|crab|prawn/]];
+const proteinTags = r => {
+  const hay = [r.title, ...r.ingredients.map(i => i.name)].join(' ').toLowerCase();
+  const found = PROTEIN_RULES.filter(([, re]) => re.test(hay)).map(([k]) => k);
+  return found.length ? found : ['vegetarian'];
+};
+const FILTER_PROTEINS = [['chicken', 'Chicken'], ['beef', 'Beef'], ['pork', 'Pork'], ['seafood', 'Seafood'], ['vegetarian', 'Vegetarian']];
+const FILTER_PRICES = [[0, 'Any'], [3, 'Under $3'], [4, 'Under $4'], [5, 'Under $5']];
+const FILTER_TIMES = [[0, 'Any'], [20, 'Up to 20 min'], [25, 'Up to 25 min'], [30, 'Up to 30 min']];
+const activeFilterCount = () => ui.fl.proteins.length + (ui.fl.maxPrice ? 1 : 0) + (ui.fl.maxTime ? 1 : 0);
 function filtered() {
-  const q = ui.filter.trim().toLowerCase(), chip = ui.chip;
+  const q = ui.filter.trim().toLowerCase(), chip = ui.chip, f = ui.fl;
   return allRecipes().filter(r => {
     const hay = [r.title, ...(r.tags || []), ...r.ingredients.map(i => i.name)].join(' ').toLowerCase();
-    return (chip === 'all' || hay.includes(chip)) && (!q || hay.includes(q));
+    return (chip === 'all' || hay.includes(chip)) && (!q || hay.includes(q))
+      && (!f.proteins.length || f.proteins.some(p => proteinTags(r).includes(p)))
+      && (!f.maxPrice || parseFloat(priceOf(r)) <= f.maxPrice)
+      && (!f.maxTime || cookMin(r) <= f.maxTime);
   });
+}
+function filterSheetHTML() {
+  const f = ui.fl, n = filtered().length;
+  const chips = (list, isOn, act) => list.map(([v, lab]) => `<button class="fchip" data-a="${act}" data-v="${v}" aria-pressed="${isOn(v)}">${lab}</button>`).join('');
+  return `<h3>Filter videos</h3>
+    <div class="f-group"><h4>Protein</h4><div class="fchips">${chips(FILTER_PROTEINS, v => f.proteins.includes(v), 'fProtein')}</div></div>
+    <div class="f-group"><h4>Cost per serving</h4><div class="fchips">${chips(FILTER_PRICES, v => f.maxPrice === +v, 'fPrice')}</div></div>
+    <div class="f-group"><h4>Time to cook</h4><div class="fchips">${chips(FILTER_TIMES, v => f.maxTime === +v, 'fTime')}</div></div>
+    <div class="row2" style="margin-top:20px"><button class="ghost-btn" data-a="resetFilters" style="margin:0;flex:1" ${activeFilterCount() ? '' : 'disabled style="margin:0;flex:1;opacity:.45"'}>Reset</button>
+    <button class="big-btn" data-a="closeSheet" style="flex:2;margin:0">${n ? `Show ${n} ${n === 1 ? 'video' : 'videos'}` : 'No matches'}</button></div>`;
+}
+function applyFilters() {
+  if ($('#sheet') && !$('#sheet').hidden && $('.f-group', $('#sheet-body'))) $('#sheet-body').innerHTML = filterSheetHTML();
+  renderAppbar('discover'); renderFeed();
 }
 let reelsBuilt = false;
 function renderDiscover(force) {
@@ -490,7 +531,7 @@ function renderDiscover(force) {
 function renderFeed() {
   const host = $('#feedhost'), list = filtered();
   host.style.height = '100%';
-  host.innerHTML = list.length ? feedHTML(list) : `<div class="empty" style="color:#9DB98C;padding-top:220px"><b style="color:#fff">No matches</b>Try another word or clear the filter.</div>`;
+  host.innerHTML = list.length ? feedHTML(list) : `<div class="empty" style="color:#9DB98C;padding-top:220px"><b style="color:#fff">No videos match</b>Try loosening a filter.${activeFilterCount() ? `<button class="big-btn alt" data-a="resetFilters" style="display:block;width:auto;margin:18px auto 0;padding:13px 22px">Clear filters</button>` : ''}</div>`;
   if (list.length) mountFeed(host);
 }
 function openRecipe(id) { openViewer('', [id], id); }
@@ -759,6 +800,13 @@ const A = {
     openSheet(`<h3>${esc(lab)}</h3><input type="text" id="pr" value="${esc(S.prefs[k] || '')}" placeholder="Your preference" maxlength="60" aria-label="${esc(lab)}"><button class="big-btn" data-a="savePref" data-k="${k}" style="margin:12px 0 0">Save</button>`, b => $('#pr', b).focus());
   },
   savePref(el) { S.prefs[el.dataset.k] = $('#pr').value.trim(); save(); closeSheet(); toast('Saved'); },
+  logFromReel(el) {
+    const id = el.dataset.id, r = byId(id), meal = guessMeal();
+    addToLog(id, meal, 1);
+    const m = S.made.find(x => x.id === id); if (m && m.left > 0) { m.left -= 1; save(); }  // keeps Created recently in step
+    $$(`[data-log-note="${id}"]`).forEach(n => { n.textContent = logNote(id); });
+    toast(`Logged 1 serving of ${r.title} to ${meal}`);
+  },
   scan() { toast('Fridge scanning is coming soon'); },
   scanReceipt() { toast('Receipt scanning is coming soon'); },
   pantryTab: el => { ui.pantryTab = el.dataset.v; renderPantry(); $('#screen-pantry').scrollTop = 0; },
@@ -805,7 +853,11 @@ const A = {
     S.extras.push({ id: 'x' + Date.now(), name, cat, price, checked: false }); save(); closeSheet(); renderPantry(); toast('Added to your list');
   },
   nutSearch() { toast('Search is coming soon'); },
-  filters() { toast('Filters are coming soon'); },
+  filters() { openSheet(filterSheetHTML()); },
+  fProtein(el) { const p = ui.fl.proteins, i = p.indexOf(el.dataset.v); i < 0 ? p.push(el.dataset.v) : p.splice(i, 1); applyFilters(); },
+  fPrice(el) { const v = +el.dataset.v; ui.fl.maxPrice = ui.fl.maxPrice === v ? 0 : v; applyFilters(); },
+  fTime(el) { const v = +el.dataset.v; ui.fl.maxTime = ui.fl.maxTime === v ? 0 : v; applyFilters(); },
+  resetFilters() { ui.fl = { proteins: [], maxPrice: 0, maxTime: 0 }; applyFilters(); },
   process,
   apiUrl(el, e) { e.preventDefault(); openSheet(`<h3>Backend URL</h3><input type="text" id="au" value="${esc(Api.base())}" aria-label="API base URL"><button class="big-btn" data-a="saveApi" style="margin:12px 0 0">Save</button>`); },
   saveApi() { localStorage.setItem('nurish.api', $('#au').value.trim()); closeSheet(); renderProfile(); },
@@ -836,8 +888,9 @@ document.addEventListener('keydown', e => {
 const R = { pantry: renderPantry, nutrition: renderNutrition, discover: () => renderDiscover(), cookbooks: renderCookbooks, profile: renderProfile };
 function setEaten(id, val) {
   const m = S.made.find(x => x.id === id); if (!m) return;
-  const eaten = Math.max(0, Math.min(m.s, Math.round(+val) || 0));
+  const eaten = Math.max(0, Math.min(m.s, Math.round(+val) || 0)), delta = eaten - (m.s - m.left);
   m.left = m.s - eaten; save();
+  if (delta > 0) addToLog(id, guessMeal(), delta); else if (delta < 0) removeFromLog(id, -delta);
   const inp = $('#eaten'); if (inp) inp.value = eaten;
   const lab = $('#ml-left'); if (lab) lab.textContent = `${m.left} of ${m.s} left`;
   renderPantry();
@@ -853,7 +906,8 @@ function madeSheet(id) {
     <div class="meter"><div class="meter-top"><b>Servings eaten</b><small id="ml-left">${m.left} of ${m.s} left</small></div>
       <div class="eaten-row"><button data-a="eatenStep" data-id="${id}" data-d="-1" aria-label="Fewer servings eaten">&minus;</button>
         <input type="number" id="eaten" min="0" max="${m.s}" step="1" inputmode="numeric" value="${eaten}" aria-label="Servings eaten">
-        <button data-a="eatenStep" data-id="${id}" data-d="1" aria-label="More servings eaten">+</button><span>of ${m.s} made</span></div></div>
+        <button data-a="eatenStep" data-id="${id}" data-d="1" aria-label="More servings eaten">+</button><span>of ${m.s} made</span></div>
+      <p class="sheet-note" style="margin-top:8px">Servings you mark as eaten count toward today's nutrition.</p></div>
     <button class="big-btn" data-a="closeSheet" style="width:100%;margin:16px 0 0">Done</button>
     <button class="ghost-btn" data-a="rmMade" data-id="${id}">Remove from Created recently</button>`,
     b => { const inp = $('#eaten', b); inp.addEventListener('input', () => { if (inp.value !== '') setEaten(id, inp.value); }); inp.addEventListener('blur', () => setEaten(id, inp.value)); });
