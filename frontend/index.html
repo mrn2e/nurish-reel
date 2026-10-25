@@ -58,6 +58,12 @@
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 </div>
 <script src="data.js"></script>
+<script>
+  /* Deployed site: use the hosted backend. Running locally (localhost or a file): leave empty so the
+     app talks to http://localhost:8000, or to whatever you set with the "change the URL" link. */
+  window.NURISH_API = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) || location.protocol === 'file:'
+    ? '' : 'https://nurish-real-api.onrender.com';
+</script>
 <script src="api.js"></script>
 <script src="app.js"></script>
 </body>

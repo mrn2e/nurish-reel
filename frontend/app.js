@@ -711,11 +711,11 @@ function uploadHTML() {
   ${u.fileError ? `<div class="note err" role="alert">${esc(u.fileError)}</div>` : ''}
   ${u.playWarn ? `<div class="note err">This browser can't play that video, so your post would only show artwork. Convert it to MP4 (H.264) or WebM and choose it again. You can still turn it into a recipe.</div>` : ''}
   <div class="file-line"><span>Captions (optional): <b>${u.captions ? esc(u.captions.name) : 'none'}</b></span><label class="small-link" style="cursor:pointer">Add .srt or .vtt<input type="file" id="cap" accept=".srt,.vtt" hidden></label></div>
-  <label class="name-field">Recipe name<input type="text" id="post-title" maxlength="80" value="${esc(u.title || '')}" placeholder="Name your recipe" ${running ? 'disabled' : ''}><span>Becomes the recipe title on Discover and in your profile. Leave blank to use the generated title.</span></label>
+  <label class="name-field">Video name<input type="text" id="post-title" maxlength="80" value="${esc(u.title || '')}" placeholder="Name your video" ${running ? 'disabled' : ''}><span>Becomes the recipe title on Discover and in your profile. Leave blank to use the generated title.</span></label>
   <label class="post-caption">Post caption (optional)<textarea id="post-caption" placeholder="Add a note about this recipe..." aria-label="Post caption" ${running ? 'disabled' : ''}>${esc(u.caption || '')}</textarea><span>Shown with your video on Discover. Leave blank to use the recipe summary.</span></label>
   <button class="big-btn alt" data-a="process" ${u.video && !running ? '' : 'disabled style="opacity:.4"'}>${running ? 'Working' : 'Turn it into a recipe'}</button>
   ${u.state ? `<ul class="stages">${STAGES.map(([k, l], i) => `<li class="${u.state === 'done' || i < idx ? 'done' : i === idx ? 'run' : ''}"><i></i>${l}</li>`).join('')}</ul>` : ''}
-  ${u.error ? `<div class="note err" role="alert">${esc(u.error)}</div>` : ''}${u.demo ? `<div class="note err" role="alert"><b>These ingredients are a sample, not from your video.</b> Nourish could not reach the server at ${esc(Api.base())}${u.demoReason ? ' (' + esc(u.demoReason) + ')' : ''}. Start the API with uvicorn, or <a class="small-link" href="#" data-a="apiUrl">change the URL</a>. If the site is on https, the server must be https too and must allow this site in CORS_ORIGINS.</div>` : ''}
+  ${u.error ? `<div class="note err" role="alert">${esc(u.error)}</div>` : ''}
   ${u.result ? resultHTML(u.result) : ''}</div>`;
 }
 function resultHTML(r) {
