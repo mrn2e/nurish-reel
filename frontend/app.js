@@ -1,4 +1,4 @@
-/* nurish frontend. No build step. */
+/* Nourish frontend. No build step. */
 (() => {
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -516,7 +516,7 @@ const A = {
   shareSheet(el) {
     const r = byId(el.dataset.id);
     openSheet(`<h3>Share</h3><p class="cmt" style="border:0;color:var(--mute)">Share “${esc(r.title)}” with a friend.</p>
-      <div class="row2"><input type="text" id="sh" value="nurish.app/r/${esc(r.id)}" readonly aria-label="Share link"><button class="big-btn" data-a="copyShare" style="flex:none;padding:0 20px">Copy</button></div>`);
+      <div class="row2"><input type="text" id="sh" value="nourish.app/r/${esc(r.id)}" readonly aria-label="Share link"><button class="big-btn" data-a="copyShare" style="flex:none;padding:0 20px">Copy</button></div>`);
   },
   copyShare() { const v = $('#sh'); v.select(); try { document.execCommand('copy'); } catch (e) {} closeSheet(); toast('Link copied'); },
   saveSheet(el) {

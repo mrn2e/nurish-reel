@@ -1,4 +1,4 @@
-# Nurish Reel frontend
+# Nourish frontend
 
 Plain HTML, CSS and JS. No build step, no dependencies.
 
@@ -21,7 +21,7 @@ whole UI works on its own.
 
 ## Design
 
-Follows the "nurish" Figma Make design: cream paper palette, dark green cards,
+Follows the "Nourish" Figma Make design: cream paper palette, dark green cards,
 coral accents, Fraunces serif headings and Figtree body. A persistent top app bar
 carries the leaf logo + wordmark and per-tab actions; a five-tab labelled bottom
 nav (Pantry · Nutrition · Discover · Cookbooks · Profile) with a coral active state.
